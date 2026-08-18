@@ -33,11 +33,11 @@ Dry-run is the default. You have to explicitly turn on writes. This is not paran
 ## Quickstart
 
 ```bash
-pip install -e .
+uv sync
 cp .env.example .env        # add your HighLevel Private Integration token + location ID
-ghl doctor                  # verifies auth, scopes, and connectivity
-ghl contacts list --limit 5
-ghl agent tag --dry-run     # see what the lead-tagger would do, changes applied: none
+uv run ghl doctor           # verifies auth, location access, and rate limits
+uv run ghl contacts list --limit 5
+uv run ghl agent tag --dry-run   # see what the lead-tagger would do, changes applied: none
 ```
 
 ## Repo structure

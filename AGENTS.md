@@ -57,6 +57,6 @@ Update this checklist in the same commit that completes a phase.
 
 ## Known deviations from README
 
-- README Quickstart says `pip install -e .` — conflicts with the uv-only rule. The Quickstart will be rewritten to uv commands in the Phase 7 final README pass, or in the same commit as any earlier README edit, whichever comes first. Until then, do not copy the pip command anywhere.
+None currently.
 
 When this list is empty, keep the heading with "None currently."
