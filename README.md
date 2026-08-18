@@ -81,6 +81,6 @@ Early and moving. The client core, CLI read operations, and the lead-tagger path
 
 ## About
 
-Built by [Ted Darling](https://teddarling.com) — 28 years of full-stack development, the last several building and running production AI systems. I run this toolkit against my own GoHighLevel account. If you have a GHL + AI build that needs to survive real customers, that's the work I do.
+Built by [Ted Darling](https://github.com/teddarling) — 28 years of full-stack development, the last several building and running production AI systems. I run this toolkit against my own GoHighLevel account. If you have a GHL + AI build that needs to survive real customers, that's the work I do.
 
 Apache 2.0.
