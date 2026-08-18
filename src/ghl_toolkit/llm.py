@@ -24,6 +24,8 @@ PRICING: dict[str, tuple[float, float]] = {
     "claude-opus-5": (5.00, 25.00),
     "claude-sonnet-5": (3.00, 15.00),
     "claude-haiku-4-5": (1.00, 5.00),
+    # The in-process demo provider makes no API calls and costs nothing.
+    "demo": (0.0, 0.0),
 }
 
 RETRY_ATTEMPTS = 3

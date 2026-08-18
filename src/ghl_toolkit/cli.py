@@ -29,6 +29,13 @@ from ghl_toolkit.client import (
     search_conversations,
     search_opportunities,
 )
+from ghl_toolkit.demo import (
+    DEMO_RULES,
+    DemoProvider,
+    demo_active,
+    demo_settings,
+    demo_transport,
+)
 from ghl_toolkit.llm import (
     AnthropicProvider,
     BudgetExceeded,
@@ -86,11 +93,15 @@ def _load_settings_or_exit() -> Settings:
 
 
 @contextmanager
-def _client_or_exit() -> Iterator[GHLClient]:
+def _client_or_exit(
+    settings: Settings | None = None,
+    transport: httpx.BaseTransport | None = None,
+) -> Iterator[GHLClient]:
     """Yield a configured client, translating API failures into exit code 1."""
-    settings = _load_settings_or_exit()
+    if settings is None:
+        settings = _load_settings_or_exit()
     try:
-        with GHLClient(settings) as client:
+        with GHLClient(settings, transport=transport) as client:
             yield client
     except AuthError as exc:
         console.print(f"[red]✗[/red] Authorization failed ({exc.status_code}): {exc.message}")
@@ -343,34 +354,41 @@ def agent_tag(
     budget: float | None = BUDGET_OPTION,
 ) -> None:
     """Propose tags for recent contacts; apply only what you approve."""
-    settings = _load_settings_or_exit()
-    if settings.anthropic_api_key is None:
+    demo = demo_active()
+    settings = demo_settings() if demo else _load_settings_or_exit()
+    if demo:
+        console.print("[yellow]Demo mode[/yellow] — seeded data, no live API or LLM calls.")
+    elif settings.anthropic_api_key is None:
         console.print(
             "[red]✗[/red] GHL_ANTHROPIC_API_KEY is not set — agent commands need an "
             "Anthropic API key. Add it to your .env."
         )
         raise typer.Exit(2)
-    if not rules_path.exists():
+
+    if rules_path.exists():
+        try:
+            rules = load_rules(rules_path)
+        except ValidationError as exc:
+            console.print(f"[red]✗[/red] Invalid rules file {rules_path}:\n{exc}")
+            raise typer.Exit(2) from None
+    elif demo:
+        rules = DEMO_RULES
+    else:
         console.print(
             f"[red]✗[/red] Rules file not found: {rules_path}\n"
             "Copy the example and edit it for your business:\n"
             "    cp tagging-rules.example.yaml tagging-rules.yaml"
         )
         raise typer.Exit(2)
-    try:
-        rules = load_rules(rules_path)
-    except ValidationError as exc:
-        console.print(f"[red]✗[/red] Invalid rules file {rules_path}:\n{exc}")
-        raise typer.Exit(2) from None
 
     llm = LlmClient(
-        AnthropicProvider(settings),
+        DemoProvider() if demo else AnthropicProvider(settings),
         CostBudget(budget if budget is not None else settings.agent_budget_usd),
         settings.llm_trace_path,
     )
     audit_log = AuditLog(settings.audit_log_path)
 
-    with _client_or_exit() as client:
+    with _client_or_exit(settings, transport=demo_transport() if demo else None) as client:
         page = search_contacts(client, limit=limit)
 
         proposals: list[Proposal] = []

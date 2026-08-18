@@ -58,6 +58,7 @@ ghl-agent-toolkit/
 │   │   └── lead_scorer.py
 │   ├── llm.py             # provider-thin LLM layer (Anthropic first, swappable)
 │   ├── proposals.py       # persistent proposal queue (webhook → approval)
+│   ├── demo.py            # demo mode: seeded data, no credentials needed
 │   ├── audit.py           # audit log for every write
 │   └── cli.py             # Typer CLI
 ├── server/

@@ -16,6 +16,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal
 
+import httpx
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from cryptography.hazmat.primitives.serialization import load_pem_public_key
@@ -24,14 +25,17 @@ from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, ValidationError
 
 from ghl_toolkit.agents.harness import run_proposals
-from ghl_toolkit.agents.lead_tagger import (
-    TaggingRules,
-    TagRule,
-    load_rules,
-    propose_for_contact,
-)
+from ghl_toolkit.agents.lead_tagger import TaggingRules, load_rules, propose_for_contact
 from ghl_toolkit.audit import AuditLog
 from ghl_toolkit.client import Contact, GHLClient, add_contact_tags
+from ghl_toolkit.demo import (
+    DEMO_CONTACTS,
+    DEMO_RULES,
+    DemoProvider,
+    demo_active,
+    demo_settings,
+    demo_transport,
+)
 from ghl_toolkit.llm import (
     AnthropicProvider,
     BudgetExceeded,
@@ -45,34 +49,6 @@ from ghl_toolkit.proposals import ProposalStatus, ProposalStore, StoredProposal
 from ghl_toolkit.settings import Settings
 
 RULES_PATH = Path("tagging-rules.yaml")
-
-# Used when no tagging-rules.yaml exists beside the server (injected-provider
-# tests, demo runs). Mirrors tagging-rules.example.yaml.
-_FALLBACK_RULES = TaggingRules(
-    tags=[
-        TagRule(
-            tag="hot-lead",
-            when=(
-                "The contact shows clear buying intent — asked about pricing, "
-                "requested a demo, or came in through a paid campaign."
-            ),
-        ),
-        TagRule(
-            tag="newsletter",
-            when=(
-                "The contact signed up through the newsletter form or downloaded "
-                "a lead magnet, but has not expressed buying intent."
-            ),
-        ),
-        TagRule(
-            tag="local-market",
-            when=(
-                "The contact is located in the business's service area (matching "
-                "city, state, or surrounding region)."
-            ),
-        ),
-    ]
-)
 
 
 class WebhookResponse(BaseModel):
@@ -89,26 +65,49 @@ class ProposalList(BaseModel):
 
 
 def _resolve_settings(settings: Settings | None) -> Settings | None:
-    """Explicit settings win; otherwise load from the environment if complete."""
+    """Explicit settings win; then demo mode; then the environment if complete."""
     if settings is not None:
         return settings
+    if demo_active():
+        return demo_settings()
     try:
         return Settings()
     except ValidationError:
         return None
 
 
+def _seed_demo(state) -> None:
+    """Queue proposals for the demo contacts so a fresh demo server has work to show."""
+    store: ProposalStore = state.store
+    if store.list(status="pending"):
+        return
+    llm = _build_llm(state)
+    for entry in DEMO_CONTACTS:
+        contact = Contact.model_validate(entry)
+        proposal = propose_for_contact(
+            contact, DEMO_RULES, llm, max_tokens=state.settings.llm_max_tokens
+        )
+        if proposal is not None:
+            store.add(proposal, source="demo-seed")
+
+
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
     settings = app.state.settings
     app.state.store = ProposalStore(settings.proposals_path) if settings is not None else None
+    if settings is not None and settings.demo_mode:
+        if app.state.provider is None:
+            app.state.provider = DemoProvider()
+        if app.state.transport is None:
+            app.state.transport = demo_transport()
+        _seed_demo(app.state)
     yield
 
 
 def create_app(
     settings: Settings | None = None,
     provider: Provider | None = None,
-    transport: object | None = None,
+    transport: httpx.BaseTransport | None = None,
 ) -> FastAPI:
     """Build the app; ``provider`` and ``transport`` are injection seams for tests."""
     app = FastAPI(title="ghl-agent-toolkit", lifespan=_lifespan)
@@ -179,7 +178,7 @@ def _parse_event(body: bytes) -> dict:
 def _server_rules() -> TaggingRules:
     if RULES_PATH.exists():
         return load_rules(RULES_PATH)
-    return _FALLBACK_RULES
+    return DEMO_RULES
 
 
 def _build_llm(state) -> LlmClient:
@@ -249,7 +248,7 @@ def _register_routes(app: FastAPI) -> None:
         record = _pending_or_error(store, proposal_id)
 
         audit_log = AuditLog(settings.audit_log_path)
-        with GHLClient(settings) as client:
+        with GHLClient(settings, transport=request.app.state.transport) as client:
             result = run_proposals(
                 [record.proposal],
                 mode="apply",

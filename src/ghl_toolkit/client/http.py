@@ -88,6 +88,7 @@ class GHLClient:
         timeout: float = 30.0,
         sleep: Callable[[float], None] = time.sleep,
         rng: random.Random | None = None,
+        transport: httpx.BaseTransport | None = None,
     ):
         self._settings = settings if settings is not None else get_settings()
         self._sleep = sleep
@@ -98,6 +99,7 @@ class GHLClient:
             base_url=self._settings.api_base_url,
             headers=headers,
             timeout=timeout,
+            transport=transport,
         )
 
     @property
