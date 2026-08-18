@@ -8,12 +8,15 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "anthropic>=0.122.0",
+    "cryptography>=50.0.0",
+    "fastapi>=0.141.1",
     "httpx>=0.28.1",
     "pydantic>=2.13.4",
     "pydantic-settings>=2.15.0",
     "pyyaml>=6.0.3",
     "rich>=15.0.0",
     "typer>=0.27.1",
+    "uvicorn>=0.52.3",
 ]
 
 [project.urls]
@@ -43,8 +46,10 @@ src = ["src", "tests"]
 select = ["E", "F", "W", "I", "UP", "B", "SIM", "C4", "RUF"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["ghl_toolkit"]
+known-first-party = ["ghl_toolkit", "server"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+# server/ lives at the repo root (outside the installed package) per the README tree.
+pythonpath = ["."]

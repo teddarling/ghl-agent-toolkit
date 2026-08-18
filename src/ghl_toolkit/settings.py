@@ -6,6 +6,14 @@ from pathlib import Path
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# GHL's Ed25519 webhook signing key, quoted from the official Webhook Integration
+# Guide (https://marketplace.gohighlevel.com/docs/webhook/WebhookIntegrationGuide/).
+# A public key, not a secret; overridable so tests can verify with their own pair.
+GHL_WEBHOOK_PUBLIC_KEY = """-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEAi2HR1srL4o18O8BRa7gVJY7G7bupbN3H9AwJrHCDiOg=
+-----END PUBLIC KEY-----
+"""
+
 
 class Settings(BaseSettings):
     """Configuration for the HighLevel API connection and the agent LLM layer."""
@@ -29,6 +37,12 @@ class Settings(BaseSettings):
     llm_trace_path: Path = Path("llm-trace.jsonl")
     audit_log_path: Path = Path("audit.log.jsonl")
     proposals_path: Path = Path("proposals.jsonl")
+
+    # Webhook server. Demo mode runs the whole loop on seeded data with no credentials.
+    demo_mode: bool = False
+    webhook_shared_secret: SecretStr | None = None
+    webhook_verify_signature: bool = False
+    webhook_public_key: str = GHL_WEBHOOK_PUBLIC_KEY
 
 
 @lru_cache

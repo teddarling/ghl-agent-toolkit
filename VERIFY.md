@@ -67,6 +67,31 @@ and its marker — once the detail is confirmed against the docs or observed API
   only, with no iterator, rather than fabricate a cursor source.
 - **Marker:** `src/ghl_toolkit/client/conversations.py` (module comment).
 
+## V9 — webhook channel applicability and signatures
+
+- **Unverified:** the Webhook Integration Guide documents signed webhooks (current:
+  Ed25519 via `X-GHL-Signature`, legacy: RSA via `X-WH-Signature`, both public keys
+  published) for **Marketplace apps**. Whether a Private-Integration-only setup can
+  subscribe to that signed channel is not documented, and sub-account workflow
+  "custom webhook" actions POST unsigned, user-shaped payloads.
+- **Assumption:** signature verification (Ed25519 only — RSA is officially labeled
+  legacy and is deliberately not implemented) is opt-in via
+  `GHL_WEBHOOK_VERIFY_SIGNATURE`; an optional `GHL_WEBHOOK_SHARED_SECRET` header check
+  is the defense for unsigned channels. A forged webhook can only create a pending
+  proposal a human must approve.
+- **Marker:** `server/main.py` (`_check_webhook_auth`).
+
+## V10 — webhook envelope fields
+
+- **Unverified:** the integration guide's overview mentions `timestamp`/`webhookId`
+  envelope fields; the official ContactCreate example
+  (`docs/webhook events/ContactCreate.md` in github.com/GoHighLevel/highlevel-api-docs)
+  shows a flat payload with neither.
+- **Assumption:** only `type`, `id`, and `locationId` are required; unknown fields are
+  tolerated. Dedup keys on `(action, target_id)` against pending proposals, not on the
+  unverifiable `webhookId`.
+- **Marker:** `server/main.py` (`_parse_event`).
+
 ## Resolved
 
 ### V5 — per-resource pagination parameters (resolved in Phase 3)
