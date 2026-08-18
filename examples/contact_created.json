@@ -1,0 +1,21 @@
+{
+  "type": "ContactCreate",
+  "locationId": "demo_location",
+  "id": "con_webhook001",
+  "firstName": "Wanda",
+  "lastName": "Hookins",
+  "name": "Wanda Hookins",
+  "email": "wanda@example.test",
+  "phone": "+15550100999",
+  "tags": [],
+  "dateAdded": "2026-08-18T12:00:00.000Z",
+  "city": "Springfield",
+  "state": "IL",
+  "country": "US",
+  "postalCode": "62701",
+  "address1": "123 Example St",
+  "companyName": "Hookins Heating & Air",
+  "source": "website newsletter signup",
+  "dnd": false,
+  "customFields": []
+}
