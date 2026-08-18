@@ -15,6 +15,7 @@ Most GHL + AI examples are demos: happy path, no rate limiting, writes straight 
   - `lead-scorer` — scores leads and writes the result to a custom field
 - **A CLI (`ghl`)** — inspect contacts, opportunities, and conversations from your terminal; run any agent in `--dry-run` mode and see exactly what it *would* change before letting it.
 - **A FastAPI webhook receiver** — the event-driven entry point: contact created → agent proposes → you approve → toolkit applies.
+- **A React approval dashboard** — the human side of the loop: see every pending proposal, the diff of what the agent wants to change and why, and approve or reject in one click.
 - **An audit log** — every write the toolkit makes to your GHL account is recorded: what changed, which agent proposed it, who approved it.
 
 ## The safety model
@@ -58,7 +59,9 @@ ghl-agent-toolkit/
 │   ├── audit.py           # audit log for every write
 │   └── cli.py             # Typer CLI
 ├── server/
-│   └── main.py            # FastAPI webhook receiver
+│   └── main.py            # FastAPI webhook receiver + proposals API
+├── web/                   # React (Vite + TypeScript) approval dashboard
+│   └── src/
 ├── tests/                 # unit tests against mocked API responses — no live calls
 ├── examples/              # runnable end-to-end examples
 └── docs/
