@@ -23,13 +23,15 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, ValidationError
 
+from ghl_toolkit.agents.harness import run_proposals
 from ghl_toolkit.agents.lead_tagger import (
     TaggingRules,
     TagRule,
     load_rules,
     propose_for_contact,
 )
-from ghl_toolkit.client import Contact
+from ghl_toolkit.audit import AuditLog
+from ghl_toolkit.client import Contact, GHLClient, add_contact_tags
 from ghl_toolkit.llm import (
     AnthropicProvider,
     BudgetExceeded,
@@ -239,6 +241,55 @@ def _register_routes(app: FastAPI) -> None:
             return request.app.state.store.get(proposal_id)
         except KeyError:
             raise HTTPException(status_code=404, detail="proposal not found") from None
+
+    @app.post("/proposals/{proposal_id}/approve", response_model=StoredProposal)
+    def approve_proposal(request: Request, proposal_id: str) -> StoredProposal:
+        settings = _settings_or_503(request)
+        store: ProposalStore = request.app.state.store
+        record = _pending_or_error(store, proposal_id)
+
+        audit_log = AuditLog(settings.audit_log_path)
+        with GHLClient(settings) as client:
+            result = run_proposals(
+                [record.proposal],
+                mode="apply",
+                approver=lambda _: True,  # the approval decision was this HTTP call
+                apply_fn=lambda p: add_contact_tags(
+                    client, p.target_id, [tag for tag in p.after if tag not in p.before]
+                ),
+                audit_log=audit_log,
+                audit_mode="api",
+            )
+
+        if result.applied:
+            return store.update(
+                proposal_id, status="applied", result=result.applied_entries[0].result
+            )
+        error = result.error_messages[0] if result.error_messages else "apply failed"
+        updated = store.update(proposal_id, status="failed", error=error)
+        raise HTTPException(status_code=502, detail=updated.model_dump(mode="json"))
+
+    @app.post("/proposals/{proposal_id}/reject", response_model=StoredProposal)
+    def reject_proposal(request: Request, proposal_id: str) -> StoredProposal:
+        _settings_or_503(request)
+        store: ProposalStore = request.app.state.store
+        _pending_or_error(store, proposal_id)
+        return store.update(proposal_id, status="rejected")
+
+    @app.get("/healthz")
+    def healthz(request: Request) -> dict[str, object]:
+        settings: Settings | None = request.app.state.settings
+        return {"status": "ok", "demo_mode": bool(settings is not None and settings.demo_mode)}
+
+
+def _pending_or_error(store: ProposalStore, proposal_id: str) -> StoredProposal:
+    try:
+        record = store.get(proposal_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="proposal not found") from None
+    if record.status != "pending":
+        raise HTTPException(status_code=409, detail=f"proposal is already {record.status}")
+    return record
 
 
 app = create_app()

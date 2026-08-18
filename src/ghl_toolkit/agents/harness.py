@@ -38,6 +38,7 @@ class HarnessResult(BaseModel):
     rejected: int = 0
     errors: int = 0
     applied_entries: list[AuditEntry] = Field(default_factory=list)
+    error_messages: list[str] = Field(default_factory=list)
 
 
 def run_proposals(
@@ -47,6 +48,7 @@ def run_proposals(
     approver: Callable[[Proposal], bool],
     apply_fn: Callable[[Proposal], object],
     audit_log: AuditLog,
+    audit_mode: str = "interactive",
 ) -> HarnessResult:
     """Run proposals through the gate; only approved ones reach apply_fn.
 
@@ -66,8 +68,9 @@ def run_proposals(
         result.approved += 1
         try:
             outcome = apply_fn(proposal)
-        except ApiError:
+        except ApiError as exc:
             result.errors += 1
+            result.error_messages.append(str(exc))
             continue
         entry = AuditEntry(
             agent=proposal.agent,
@@ -77,7 +80,7 @@ def run_proposals(
             before=proposal.before,
             after=proposal.after,
             reasoning=proposal.reasoning,
-            mode="interactive",
+            mode=audit_mode,
             result=outcome,
         )
         audit_log.append(entry)
