@@ -1,0 +1,8 @@
+{
+  "statusCode": 422,
+  "message": [
+    "email must be an email",
+    "phone must be a phone number"
+  ],
+  "error": "Unprocessable Entity"
+}

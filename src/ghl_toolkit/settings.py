@@ -18,6 +18,7 @@ class Settings(BaseSettings):
 
     api_token: SecretStr
     location_id: str
+    api_base_url: str = "https://services.leadconnectorhq.com"
 
 
 @lru_cache

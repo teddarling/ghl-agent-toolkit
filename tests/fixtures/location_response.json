@@ -1,0 +1,9 @@
+{
+  "location": {
+    "id": "loc_test123",
+    "name": "Test Location",
+    "companyId": "comp_test456",
+    "timezone": "America/Chicago",
+    "email": "owner@example.com"
+  }
+}
