@@ -11,7 +11,7 @@ https://marketplace.gohighlevel.com/docs/oauth/Faqs/index.html
 import importlib.metadata
 import random
 import time
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from contextlib import suppress
 from types import TracebackType
 
@@ -58,6 +58,24 @@ def retry_delay(attempt: int, headers: Mapping[str, str], rng: random.Random) ->
             with suppress(ValueError):
                 return float(interval_ms) / 1000.0
     return rng.uniform(0.0, min(MAX_DELAY, BASE_DELAY * 2**attempt))
+
+
+def iter_pages[T, C](fetch: Callable[[C | None], tuple[list[T], C | None]]) -> Iterator[T]:
+    """Yield items across every page of a cursor-paginated endpoint.
+
+    ``fetch`` receives the previous page's cursor (``None`` on the first call) and
+    returns ``(items, next_cursor)``; iteration stops when the next cursor is ``None``.
+
+    # VERIFY: per-resource pagination parameters are unverified; resource modules must
+    # confirm their own conventions against the docs before adapting them to ``fetch``.
+    # See VERIFY.md (V5).
+    """
+    cursor: C | None = None
+    while True:
+        items, cursor = fetch(cursor)
+        yield from items
+        if cursor is None:
+            return
 
 
 class GHLClient:

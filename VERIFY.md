@@ -36,3 +36,11 @@ and its marker — once the detail is confirmed against the docs or observed API
   but not stated.
 - **Assumption:** the same limits apply.
 - **Marker:** `src/ghl_toolkit/client/http.py` (module docstring).
+
+## V5 — per-resource pagination parameters
+
+- **Unverified:** pagination parameter conventions per resource (contacts, opportunities,
+  conversations) — the resource doc pages did not render during verification.
+- **Assumption:** none taken. Phase 2 ships a shape-agnostic cursor iterator; each Phase 3
+  resource module must verify its own pagination parameters against the docs before use.
+- **Marker:** `src/ghl_toolkit/client/http.py` (`iter_pages`).
