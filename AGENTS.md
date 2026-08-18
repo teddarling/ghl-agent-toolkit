@@ -51,9 +51,9 @@ Update this checklist in the same commit that completes a phase.
 - [ ] **Phase 2 — Client core** — not started (http client: retry/backoff/jitter, rate-limit headers, pagination, typed errors; `ghl doctor`)
 - [ ] **Phase 3 — Read operations** — not started (contacts/opportunities/conversations, pydantic models, rich CLI tables)
 - [ ] **Phase 4 — Harness + lead_tagger** — not started (propose/approve/apply, cost budget, structured outputs, tracing, audit log; `ghl agent tag`)
-- [ ] **Phase 5 — Webhook receiver** — not started (FastAPI server/, proposals API, runnable example)
-- [ ] **Phase 6 — React approval dashboard** — not started (web/, Vite + React + TS, TanStack Query, Vitest)
-- [ ] **Phase 7 — Remaining agents + docs** — not started (reply_drafter, lead_scorer, docs/, final README pass)
+- [ ] **Phase 5 — Webhook receiver** — not started (FastAPI server/, proposals API, runnable example; demo mode: server + CLI run against seeded test fixtures, no GHL account or token required)
+- [ ] **Phase 6 — React approval dashboard** — not started (web/, Vite + React + TS, TanStack Query, Vitest; dashboard works against demo-mode server for reviewers and screen recordings)
+- [ ] **Phase 7 — Remaining agents + docs** — not started (reply_drafter, lead_scorer, docs/, final README pass; devcontainer + "Open in Codespaces" badge, committed vhs tapes for CLI demo GIFs, docker compose for one-command demo)
 
 ## Known deviations from README
 
