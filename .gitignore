@@ -15,6 +15,7 @@ build/
 # Agent run artifacts
 llm-trace.jsonl
 audit.log.jsonl
+proposals.jsonl
 
 # Per-business tagging rules (commit the .example, not your real rules)
 tagging-rules.yaml
