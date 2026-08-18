@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     llm_max_tokens: int = 4096
     agent_budget_usd: float = 1.0
     llm_trace_path: Path = Path("llm-trace.jsonl")
+    audit_log_path: Path = Path("audit.log.jsonl")
 
 
 @lru_cache
