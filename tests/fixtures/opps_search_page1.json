@@ -1,0 +1,42 @@
+{
+  "opportunities": [
+    {
+      "id": "opp_test001",
+      "name": "Website redesign",
+      "status": "open",
+      "monetaryValue": 2500,
+      "pipelineId": "pipe_test001",
+      "pipelineStageId": "stage_test001",
+      "contactId": "con_test001",
+      "createdAt": "2026-07-03T10:00:00.000Z",
+      "updatedAt": "2026-07-10T16:20:00.000Z",
+      "lastStatusChangeAt": "2026-07-05T11:00:00.000Z",
+      "locationId": "loc_test123",
+      "source": "referral"
+    },
+    {
+      "id": "opp_test002",
+      "name": "SEO retainer",
+      "status": "won",
+      "monetaryValue": 900,
+      "pipelineId": "pipe_test001",
+      "pipelineStageId": "stage_test002",
+      "contactId": "con_test002",
+      "createdAt": "2026-07-04T14:30:00.000Z",
+      "updatedAt": "2026-07-12T09:15:00.000Z",
+      "lastStatusChangeAt": "2026-07-12T09:15:00.000Z",
+      "locationId": "loc_test123",
+      "source": "website form"
+    }
+  ],
+  "meta": {
+    "total": 3,
+    "startAfterId": "opp_test002",
+    "startAfter": 1719000000000,
+    "currentPage": 1,
+    "nextPage": 2,
+    "prevPage": null,
+    "nextPageUrl": "https://api.test/opportunities/search?location_id=loc_test123&limit=2&startAfter=1719000000000&startAfterId=opp_test002"
+  },
+  "aggregations": {}
+}

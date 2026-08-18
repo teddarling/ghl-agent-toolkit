@@ -1,0 +1,25 @@
+{
+  "opportunities": [
+    {
+      "id": "opp_test003",
+      "name": "Monthly maintenance",
+      "status": "open",
+      "monetaryValue": 450,
+      "pipelineId": "pipe_test001",
+      "pipelineStageId": "stage_test001",
+      "contactId": "con_test003",
+      "createdAt": "2026-07-06T11:45:00.000Z",
+      "updatedAt": "2026-07-06T11:45:00.000Z",
+      "lastStatusChangeAt": "2026-07-06T11:45:00.000Z",
+      "locationId": "loc_test123",
+      "source": "landing page"
+    }
+  ],
+  "meta": {
+    "total": 3,
+    "currentPage": 2,
+    "nextPage": null,
+    "prevPage": 1
+  },
+  "aggregations": {}
+}

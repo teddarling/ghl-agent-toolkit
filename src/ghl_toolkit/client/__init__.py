@@ -10,6 +10,13 @@ from ghl_toolkit.client.contacts import (
 )
 from ghl_toolkit.client.errors import ApiError, AuthError, NotFound, RateLimited
 from ghl_toolkit.client.http import GHLClient
+from ghl_toolkit.client.opportunities import (
+    Opportunity,
+    OpportunityMeta,
+    OpportunityPage,
+    iter_opportunities,
+    search_opportunities,
+)
 
 __all__ = [
     "ApiError",
@@ -18,9 +25,14 @@ __all__ = [
     "ContactPage",
     "GHLClient",
     "NotFound",
+    "Opportunity",
+    "OpportunityMeta",
+    "OpportunityPage",
     "RateLimited",
     "auth_headers",
     "get_contact",
     "iter_contacts",
+    "iter_opportunities",
     "search_contacts",
+    "search_opportunities",
 ]
