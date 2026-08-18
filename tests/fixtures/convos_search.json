@@ -1,0 +1,31 @@
+{
+  "conversations": [
+    {
+      "id": "conv_test001",
+      "contactId": "con_test001",
+      "contactName": "Jane Tester",
+      "fullName": "Jane Tester",
+      "email": "jane@x.test",
+      "phone": "+15550000001",
+      "lastMessageBody": "Thanks, that works for me!",
+      "lastMessageType": "TYPE_SMS",
+      "type": "TYPE_PHONE",
+      "unreadCount": 2,
+      "locationId": "loc_test123"
+    },
+    {
+      "id": "conv_test002",
+      "contactId": "con_test002",
+      "contactName": "Sam Sample",
+      "fullName": "Sam Sample",
+      "email": "sam@x.test",
+      "phone": "+15550000002",
+      "lastMessageBody": "Can you send the quote?",
+      "lastMessageType": "TYPE_EMAIL",
+      "type": "TYPE_EMAIL",
+      "unreadCount": 0,
+      "locationId": "loc_test123"
+    }
+  ],
+  "total": 2
+}

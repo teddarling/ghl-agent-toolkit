@@ -8,6 +8,11 @@ from ghl_toolkit.client.contacts import (
     iter_contacts,
     search_contacts,
 )
+from ghl_toolkit.client.conversations import (
+    Conversation,
+    ConversationPage,
+    search_conversations,
+)
 from ghl_toolkit.client.errors import ApiError, AuthError, NotFound, RateLimited
 from ghl_toolkit.client.http import GHLClient
 from ghl_toolkit.client.opportunities import (
@@ -23,6 +28,8 @@ __all__ = [
     "AuthError",
     "Contact",
     "ContactPage",
+    "Conversation",
+    "ConversationPage",
     "GHLClient",
     "NotFound",
     "Opportunity",
@@ -34,5 +41,6 @@ __all__ = [
     "iter_contacts",
     "iter_opportunities",
     "search_contacts",
+    "search_conversations",
     "search_opportunities",
 ]

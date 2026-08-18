@@ -58,6 +58,15 @@ and its marker — once the detail is confirmed against the docs or observed API
   absence is safe.
 - **Marker:** `src/ghl_toolkit/client/contacts.py` (`ContactPage`).
 
+## V8 — conversations deep pagination
+
+- **Unverified:** `GET /conversations/search` documents a `startAfterDate` cursor that
+  "should contain the sort value of the last document", but no documented field on
+  `ConversationSchema` items carries that value.
+- **Assumption:** none taken — the toolkit ships single-page `search_conversations`
+  only, with no iterator, rather than fabricate a cursor source.
+- **Marker:** `src/ghl_toolkit/client/conversations.py` (module comment).
+
 ## Resolved
 
 ### V5 — per-resource pagination parameters (resolved in Phase 3)
@@ -65,4 +74,4 @@ and its marker — once the detail is confirmed against the docs or observed API
 Verified from the official OpenAPI specs in github.com/GoHighLevel/highlevel-api-docs:
 opportunities page via the `startAfter`/`startAfterId` cursor echoed in `meta`
 (`apps/opportunities.json`); conversations expose `limit` and a `startAfterDate` cursor
-(`apps/conversations.json`); contacts page mechanics are covered by V6/V7.
+(`apps/conversations.json` — but see V8); contacts page mechanics are covered by V6/V7.
