@@ -27,7 +27,8 @@ Everything Python runs through uv — never invoke pip or python directly. Comma
 | `uv run ghl opps list` | List recent opportunities (`--limit`, `--json`) |
 | `uv run ghl convos list` | List recent conversations (`--limit`, `--json`) |
 | `uv run ghl agent tag` | Propose tags for recent contacts (dry-run default; `--apply` to write) |
-| `uv run uvicorn server.main:app` | Webhook receiver (from Phase 5) |
+| `uv run uvicorn server.main:app` | Webhook receiver + proposals API |
+| `GHL_DEMO_MODE=1 uv run uvicorn server.main:app` | Demo mode: seeded proposals, no GHL account or keys needed |
 
 ### Web dashboard (from Phase 6)
 
@@ -56,7 +57,7 @@ Update this checklist in the same commit that completes a phase.
 - [x] **Phase 2 — Client core** — complete (http client: retry/backoff/jitter, rate-limit headers, pagination, typed errors; `ghl doctor`)
 - [x] **Phase 3 — Read operations** — complete (contacts/opportunities/conversations, pydantic models, rich CLI tables)
 - [x] **Phase 4 — Harness + lead_tagger** — complete (propose/approve/apply, cost budget, structured outputs, tracing, audit log; `ghl agent tag`)
-- [ ] **Phase 5 — Webhook receiver** — not started (FastAPI server/, proposals API, runnable example; demo mode: server + CLI run against seeded test fixtures, no GHL account or token required)
+- [x] **Phase 5 — Webhook receiver** — complete (FastAPI server/, proposals API, runnable example; demo mode: server + CLI run against seeded data, no GHL account or token required)
 - [ ] **Phase 6 — React approval dashboard** — not started (web/, Vite + React + TS, TanStack Query, Vitest; dashboard works against demo-mode server for reviewers and screen recordings)
 - [ ] **Phase 7 — Remaining agents + docs** — not started (reply_drafter, lead_scorer, docs/, final README pass; devcontainer + "Open in Codespaces" badge, committed vhs tapes for CLI demo GIFs, docker compose for one-command demo)
 
