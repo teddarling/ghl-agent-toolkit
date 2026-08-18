@@ -56,6 +56,7 @@ ghl-agent-toolkit/
 │   │   ├── lead_tagger.py
 │   │   ├── reply_drafter.py
 │   │   └── lead_scorer.py
+│   ├── llm.py             # provider-thin LLM layer (Anthropic first, swappable)
 │   ├── audit.py           # audit log for every write
 │   └── cli.py             # Typer CLI
 ├── server/

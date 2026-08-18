@@ -12,6 +12,9 @@ dist/
 build/
 *.egg-info/
 
+# Agent run artifacts
+llm-trace.jsonl
+
 # Node (web/ dashboard, Phase 6)
 node_modules/
 
