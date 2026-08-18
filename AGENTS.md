@@ -21,7 +21,7 @@ Everything Python runs through uv — never invoke pip or python directly. Comma
 | `uv run ruff check .` | Lint |
 | `uv run ruff format --check .` | Formatting check (drop `--check` to fix) |
 | `uv run ghl --help` | CLI entry point |
-| `uv run ghl doctor` | Verify auth + token scopes (from Phase 2) |
+| `uv run ghl doctor` | Verify auth, location access, and rate limits |
 | `uv run uvicorn server.main:app` | Webhook receiver (from Phase 5) |
 
 ### Web dashboard (from Phase 6)
@@ -48,7 +48,7 @@ Update this checklist in the same commit that completes a phase.
 
 - [x] **Phase 0 — Agent context files** — complete (AGENTS.md, CLAUDE.md)
 - [x] **Phase 1 — Scaffold** — complete (uv init src layout, settings, .env.example, .gitignore, ruff, CI, green empty test tree, `ghl --help`)
-- [ ] **Phase 2 — Client core** — not started (http client: retry/backoff/jitter, rate-limit headers, pagination, typed errors; `ghl doctor`)
+- [x] **Phase 2 — Client core** — complete (http client: retry/backoff/jitter, rate-limit headers, pagination, typed errors; `ghl doctor`)
 - [ ] **Phase 3 — Read operations** — not started (contacts/opportunities/conversations, pydantic models, rich CLI tables)
 - [ ] **Phase 4 — Harness + lead_tagger** — not started (propose/approve/apply, cost budget, structured outputs, tracing, audit log; `ghl agent tag`)
 - [ ] **Phase 5 — Webhook receiver** — not started (FastAPI server/, proposals API, runnable example; demo mode: server + CLI run against seeded test fixtures, no GHL account or token required)
