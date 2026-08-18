@@ -12,8 +12,7 @@ from pathlib import Path
 from typing import Protocol
 
 import pydantic
-from anthropic import Anthropic
-from anthropic.lib._parse._transform import transform_schema
+from anthropic import Anthropic, transform_schema
 from pydantic import BaseModel
 
 from ghl_toolkit.settings import Settings
