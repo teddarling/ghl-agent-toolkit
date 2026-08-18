@@ -12,7 +12,7 @@ ghl-agent-toolkit is production patterns for putting AI agents to work inside Go
 
 Everything Python runs through uv — never invoke pip or python directly. Commands become available at the phase noted; do not document a command here until it actually works.
 
-### Python (from Phase 1)
+### Python
 
 | Command | Purpose |
 | --- | --- |
@@ -20,7 +20,7 @@ Everything Python runs through uv — never invoke pip or python directly. Comma
 | `uv run pytest` | Run the full test suite (offline; must pass before every commit) |
 | `uv run ruff check .` | Lint |
 | `uv run ruff format --check .` | Formatting check (drop `--check` to fix) |
-| `uv run ghl --help` | CLI entry point (from Phase 1) |
+| `uv run ghl --help` | CLI entry point |
 | `uv run ghl doctor` | Verify auth + token scopes (from Phase 2) |
 | `uv run uvicorn server.main:app` | Webhook receiver (from Phase 5) |
 
@@ -47,7 +47,7 @@ Everything Python runs through uv — never invoke pip or python directly. Comma
 Update this checklist in the same commit that completes a phase.
 
 - [x] **Phase 0 — Agent context files** — complete (AGENTS.md, CLAUDE.md)
-- [ ] **Phase 1 — Scaffold** — not started (uv init src layout, settings, .env.example, .gitignore, ruff, CI, green empty test tree, `ghl --help`)
+- [x] **Phase 1 — Scaffold** — complete (uv init src layout, settings, .env.example, .gitignore, ruff, CI, green empty test tree, `ghl --help`)
 - [ ] **Phase 2 — Client core** — not started (http client: retry/backoff/jitter, rate-limit headers, pagination, typed errors; `ghl doctor`)
 - [ ] **Phase 3 — Read operations** — not started (contacts/opportunities/conversations, pydantic models, rich CLI tables)
 - [ ] **Phase 4 — Harness + lead_tagger** — not started (propose/approve/apply, cost budget, structured outputs, tracing, audit log; `ghl agent tag`)
