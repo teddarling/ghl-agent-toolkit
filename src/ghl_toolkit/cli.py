@@ -5,23 +5,37 @@ import textwrap
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
+from pathlib import Path
 
 import httpx
 import typer
 from pydantic import ValidationError
 from rich import box
 from rich.console import Console
+from rich.panel import Panel
 from rich.table import Table
 
+from ghl_toolkit.agents.harness import Proposal, run_proposals
+from ghl_toolkit.agents.lead_tagger import load_rules, propose_for_contact
+from ghl_toolkit.audit import AuditLog
 from ghl_toolkit.client import (
     ApiError,
     AuthError,
     GHLClient,
     NotFound,
+    add_contact_tags,
     get_contact,
     search_contacts,
     search_conversations,
     search_opportunities,
+)
+from ghl_toolkit.llm import (
+    AnthropicProvider,
+    BudgetExceeded,
+    CostBudget,
+    LlmClient,
+    LlmRefusal,
+    MalformedOutputError,
 )
 from ghl_toolkit.settings import Settings, get_settings
 
@@ -29,9 +43,11 @@ app = typer.Typer(no_args_is_help=True)
 contacts_app = typer.Typer(no_args_is_help=True)
 opps_app = typer.Typer(no_args_is_help=True)
 convos_app = typer.Typer(no_args_is_help=True)
+agent_app = typer.Typer(no_args_is_help=True)
 app.add_typer(contacts_app, name="contacts", help="Inspect contacts.")
 app.add_typer(opps_app, name="opps", help="Inspect opportunities.")
 app.add_typer(convos_app, name="convos", help="Inspect conversations.")
+app.add_typer(agent_app, name="agent", help="Run gated agents (propose → approve → apply).")
 console = Console()
 
 RATE_LIMIT_HEADERS = (
@@ -44,6 +60,18 @@ RATE_LIMIT_HEADERS = (
 
 LIMIT_OPTION = typer.Option(20, "--limit", help="Maximum records to fetch (API max 100).")
 JSON_OPTION = typer.Option(False, "--json", help="Print the raw response as JSON.")
+APPLY_OPTION = typer.Option(
+    False,
+    "--apply/--dry-run",
+    help="Apply approved proposals (default is dry-run: propose only, write nothing).",
+)
+AGENT_LIMIT_OPTION = typer.Option(10, "--limit", help="How many recent contacts to consider.")
+RULES_OPTION = typer.Option(
+    Path("tagging-rules.yaml"), "--rules", help="Path to the tagging rules file."
+)
+BUDGET_OPTION = typer.Option(
+    None, "--budget", help="Per-run USD budget for LLM calls (default from settings)."
+)
 
 
 def _load_settings_or_exit() -> Settings:
@@ -294,3 +322,101 @@ def convos_list(limit: int = LIMIT_OPTION, json_output: bool = JSON_OPTION) -> N
         )
     console.print(table)
     console.print(f"Showing {len(page.conversations)} of {page.total} conversations.")
+
+
+def _proposal_panel(proposal: Proposal) -> Panel:
+    before = ", ".join(proposal.before) if proposal.before else "(none)"
+    added = [tag for tag in proposal.after if tag not in proposal.before]
+    body = (
+        f"[bold]Tags:[/bold] {before} → [green]{', '.join(proposal.after)}[/green]\n"
+        f"[bold]Adds:[/bold] {', '.join(added)}\n"
+        f"[bold]Reasoning:[/bold] {proposal.reasoning}"
+    )
+    return Panel(body, title=f"{proposal.target_label} ({proposal.target_id})", box=box.SQUARE)
+
+
+@agent_app.command("tag")
+def agent_tag(
+    apply: bool = APPLY_OPTION,
+    limit: int = AGENT_LIMIT_OPTION,
+    rules_path: Path = RULES_OPTION,
+    budget: float | None = BUDGET_OPTION,
+) -> None:
+    """Propose tags for recent contacts; apply only what you approve."""
+    settings = _load_settings_or_exit()
+    if settings.anthropic_api_key is None:
+        console.print(
+            "[red]✗[/red] GHL_ANTHROPIC_API_KEY is not set — agent commands need an "
+            "Anthropic API key. Add it to your .env."
+        )
+        raise typer.Exit(2)
+    if not rules_path.exists():
+        console.print(
+            f"[red]✗[/red] Rules file not found: {rules_path}\n"
+            "Copy the example and edit it for your business:\n"
+            "    cp tagging-rules.example.yaml tagging-rules.yaml"
+        )
+        raise typer.Exit(2)
+    try:
+        rules = load_rules(rules_path)
+    except ValidationError as exc:
+        console.print(f"[red]✗[/red] Invalid rules file {rules_path}:\n{exc}")
+        raise typer.Exit(2) from None
+
+    llm = LlmClient(
+        AnthropicProvider(settings),
+        CostBudget(budget if budget is not None else settings.agent_budget_usd),
+        settings.llm_trace_path,
+    )
+    audit_log = AuditLog(settings.audit_log_path)
+
+    with _client_or_exit() as client:
+        page = search_contacts(client, limit=limit)
+
+        proposals: list[Proposal] = []
+        no_changes = 0
+        try:
+            for contact in page.contacts:
+                proposal = propose_for_contact(
+                    contact,
+                    rules,
+                    llm,
+                    max_tokens=settings.llm_max_tokens,
+                    on_invented=lambda tag: console.print(
+                        f"[yellow]⚠[/yellow] Dropped tag not in the rules: {tag!r}"
+                    ),
+                )
+                if proposal is None:
+                    no_changes += 1
+                else:
+                    proposals.append(proposal)
+                    console.print(_proposal_panel(proposal))
+        except BudgetExceeded as exc:
+            console.print(f"[red]✗[/red] Stopped: {exc}")
+            raise typer.Exit(1) from None
+        except LlmRefusal as exc:
+            console.print(f"[red]✗[/red] The model refused: {exc}")
+            raise typer.Exit(1) from None
+        except MalformedOutputError:
+            console.print("[red]✗[/red] The model kept returning invalid output; giving up.")
+            raise typer.Exit(1) from None
+
+        result = run_proposals(
+            proposals,
+            mode="apply" if apply else "dry_run",
+            approver=lambda p: typer.confirm(f"Apply to {p.target_label}?"),
+            apply_fn=lambda p: add_contact_tags(
+                client, p.target_id, [tag for tag in p.after if tag not in p.before]
+            ),
+            audit_log=audit_log,
+        )
+
+    console.print(
+        f"Proposed {result.proposed} · approved {result.approved} · "
+        f"applied {result.applied} · rejected {result.rejected} · no changes {no_changes}"
+    )
+    if not apply and result.proposed:
+        console.print("Dry run — nothing was written. Re-run with --apply to approve changes.")
+    if result.errors:
+        console.print(f"[red]✗[/red] {result.errors} apply call(s) failed — see messages above.")
+        raise typer.Exit(1)
