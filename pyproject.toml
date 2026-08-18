@@ -3,7 +3,7 @@ name = "ghl-toolkit"
 version = "0.1.0"
 description = "Production patterns for putting AI agents to work inside GoHighLevel — safely."
 authors = [
-    { name = "Ted Darling", email = "ted@digitalspirittech.com" }
+    { name = "Ted Darling" }
 ]
 requires-python = ">=3.12"
 dependencies = [
@@ -12,6 +12,10 @@ dependencies = [
     "rich>=15.0.0",
     "typer>=0.27.1",
 ]
+
+[project.urls]
+Homepage = "https://teddarling.com"
+Repository = "https://github.com/teddarling/ghl-agent-toolkit"
 
 [project.scripts]
 ghl = "ghl_toolkit.cli:app"
