@@ -37,10 +37,32 @@ and its marker — once the detail is confirmed against the docs or observed API
 - **Assumption:** the same limits apply.
 - **Marker:** `src/ghl_toolkit/client/http.py` (module docstring).
 
-## V5 — per-resource pagination parameters
+## V6 — `POST /contacts/search` request body
 
-- **Unverified:** pagination parameter conventions per resource (contacts, opportunities,
-  conversations) — the resource doc pages did not render during verification.
-- **Assumption:** none taken. Phase 2 ships a shape-agnostic cursor iterator; each Phase 3
-  resource module must verify its own pagination parameters against the docs before use.
-- **Marker:** `src/ghl_toolkit/client/http.py` (`iter_pages`).
+- **Unverified:** the official OpenAPI spec (`apps/contacts.json` in
+  github.com/GoHighLevel/highlevel-api-docs) defines the search body as an empty object
+  (`SearchBodyV2DTO` has no properties), and the official Python SDK generates the same
+  empty class. The full filter/sort vocabulary is documented only in a JS-rendered page
+  the spec links to.
+- **Assumption:** send only `{"locationId", "page", "pageLimit"}`, taken from the
+  deprecated `GET /contacts/` endpoint's parameter vocabulary. No filters or sort.
+- **Marker:** `src/ghl_toolkit/client/contacts.py` (`search_contacts`).
+
+## V7 — `POST /contacts/search` response envelope
+
+- **Unverified:** the spec declares no schema for the 200 response. The documented
+  search-item schema (`ContactsSearchSchema`) also omits display fields (name, phone)
+  that the full contact schema has.
+- **Assumption:** a `{"contacts": [...], "total": N}` envelope whose items are in
+  practice a superset of `ContactsSearchSchema`; all item fields parse as optional so
+  absence is safe.
+- **Marker:** `src/ghl_toolkit/client/contacts.py` (`ContactPage`).
+
+## Resolved
+
+### V5 — per-resource pagination parameters (resolved in Phase 3)
+
+Verified from the official OpenAPI specs in github.com/GoHighLevel/highlevel-api-docs:
+opportunities page via the `startAfter`/`startAfterId` cursor echoed in `meta`
+(`apps/opportunities.json`); conversations expose `limit` and a `startAfterDate` cursor
+(`apps/conversations.json`); contacts page mechanics are covered by V6/V7.

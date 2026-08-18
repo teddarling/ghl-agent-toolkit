@@ -1,0 +1,44 @@
+{
+  "contacts": [
+    {
+      "id": "con_test001",
+      "locationId": "loc_test123",
+      "firstName": "Jane",
+      "lastName": "Tester",
+      "name": "Jane Tester",
+      "email": "jane@x.test",
+      "phone": "+15550000001",
+      "tags": ["vip", "lead"],
+      "dateAdded": "2026-07-01T12:00:00.000Z",
+      "source": "website form",
+      "country": "US"
+    },
+    {
+      "id": "con_test002",
+      "locationId": "loc_test123",
+      "firstName": "Sam",
+      "lastName": "Sample",
+      "name": "Sam Sample",
+      "email": "sam@x.test",
+      "phone": "+15550000002",
+      "tags": [],
+      "dateAdded": "2026-07-02T09:30:00.000Z",
+      "source": "referral",
+      "country": "US"
+    },
+    {
+      "id": "con_test003",
+      "locationId": "loc_test123",
+      "firstName": "Rita",
+      "lastName": "Mockdata",
+      "name": "Rita Mockdata",
+      "email": "rita@x.test",
+      "phone": "+15550000003",
+      "tags": ["newsletter"],
+      "dateAdded": "2026-07-03T15:10:00.000Z",
+      "source": "landing page",
+      "country": "US"
+    }
+  ],
+  "total": 4
+}

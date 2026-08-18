@@ -65,10 +65,6 @@ def iter_pages[T, C](fetch: Callable[[C | None], tuple[list[T], C | None]]) -> I
 
     ``fetch`` receives the previous page's cursor (``None`` on the first call) and
     returns ``(items, next_cursor)``; iteration stops when the next cursor is ``None``.
-
-    # VERIFY: per-resource pagination parameters are unverified; resource modules must
-    # confirm their own conventions against the docs before adapting them to ``fetch``.
-    # See VERIFY.md (V5).
     """
     cursor: C | None = None
     while True:
@@ -103,6 +99,11 @@ class GHLClient:
             headers=headers,
             timeout=timeout,
         )
+
+    @property
+    def settings(self) -> Settings:
+        """The settings this client was constructed with."""
+        return self._settings
 
     def request(
         self,
