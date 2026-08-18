@@ -1,0 +1,4 @@
+# Structurally invalid on purpose: rule entries must use the "tag" key.
+tags:
+  - name: wrong-key
+    when: This entry uses "name" instead of "tag".

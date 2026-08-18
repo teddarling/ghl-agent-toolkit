@@ -1,0 +1,21 @@
+# Tagging rules for the lead_tagger agent.
+#
+# Copy this file and edit it for your business:
+#
+#     cp tagging-rules.example.yaml tagging-rules.yaml
+#
+# Each rule is a tag the agent is allowed to propose, and the criteria for when
+# it applies. The agent can never propose a tag that is not listed here.
+tags:
+  - tag: hot-lead
+    when: >-
+      The contact shows clear buying intent — asked about pricing, requested a
+      demo, or came in through a paid campaign.
+  - tag: newsletter
+    when: >-
+      The contact signed up through the newsletter form or downloaded a lead
+      magnet, but has not expressed buying intent.
+  - tag: local-market
+    when: >-
+      The contact is located in the business's service area (matching city,
+      state, or surrounding region).

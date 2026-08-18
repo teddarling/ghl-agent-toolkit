@@ -4,6 +4,7 @@ from ghl_toolkit.client.auth import auth_headers
 from ghl_toolkit.client.contacts import (
     Contact,
     ContactPage,
+    add_contact_tags,
     get_contact,
     iter_contacts,
     search_contacts,
@@ -36,6 +37,7 @@ __all__ = [
     "OpportunityMeta",
     "OpportunityPage",
     "RateLimited",
+    "add_contact_tags",
     "auth_headers",
     "get_contact",
     "iter_contacts",

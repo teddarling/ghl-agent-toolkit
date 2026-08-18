@@ -69,6 +69,16 @@ def get_contact(client: GHLClient, contact_id: str) -> Contact:
     return Contact.model_validate(response.json()["contact"])
 
 
+def add_contact_tags(client: GHLClient, contact_id: str, tags: list[str]) -> dict:
+    """Add tags to a contact via POST /contacts/{contactId}/tags (scope contacts.write).
+
+    The only write in the contacts module; reachable in practice only through the
+    harness's apply step. Returns the 201 body ({"tags": [...]}) for the audit log.
+    """
+    response = client.post(f"/contacts/{contact_id}/tags", json={"tags": tags})
+    return response.json()
+
+
 def iter_contacts(client: GHLClient, *, page_size: int = 20) -> Iterator[Contact]:
     """Yield every contact for the location, fetching pages as needed."""
 
