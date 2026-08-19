@@ -121,7 +121,11 @@ def _client_or_exit(
 ) -> Iterator[GHLClient]:
     """Yield a configured client, translating API failures into exit code 1."""
     if settings is None:
-        settings = _load_settings_or_exit()
+        if demo_active():
+            settings = demo_settings()
+            transport = transport if transport is not None else demo_transport()
+        else:
+            settings = _load_settings_or_exit()
     try:
         with GHLClient(settings, transport=transport) as client:
             yield client
