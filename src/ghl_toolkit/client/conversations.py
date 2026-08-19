@@ -3,9 +3,10 @@
 Endpoints, parameters, and schemas come from the official OpenAPI spec
 (``apps/conversations.json`` in github.com/GoHighLevel/highlevel-api-docs):
 ``GET /conversations/search`` with camelCase ``locationId`` and ``limit``, and
-``GET /conversations/{conversationId}/messages`` whose ``Version`` header is
-pinned by the spec to the enum value ``2021-04-15`` (not the client-wide
-2021-07-28) and whose scope is ``conversations/message.readonly``.
+``GET /conversations/{conversationId}/messages`` (scope
+``conversations/message.readonly``). Both endpoints pin their ``Version``
+header to the enum value ``2021-04-15`` — not the client-wide 2021-07-28 —
+so every request in this module sends the pinned value.
 """
 
 from datetime import datetime
@@ -53,7 +54,11 @@ class ConversationPage(BaseModel):
 def search_conversations(client: GHLClient, *, limit: int = 20) -> ConversationPage:
     """Return one page of recent conversations for the configured location."""
     params = {"locationId": client.settings.location_id, "limit": limit}
-    response = client.get("/conversations/search", params=params)
+    response = client.get(
+        "/conversations/search",
+        params=params,
+        headers={"Version": MESSAGES_API_VERSION},
+    )
     return ConversationPage.model_validate(response.json())
 
 
