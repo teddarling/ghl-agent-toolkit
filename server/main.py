@@ -26,7 +26,7 @@ from pydantic import BaseModel, ValidationError
 
 from ghl_toolkit.agents.harness import run_proposals
 from ghl_toolkit.agents.lead_tagger import TaggingRules, load_rules, propose_for_contact
-from ghl_toolkit.audit import AuditLog
+from ghl_toolkit.audit import AuditEntry, AuditLog
 from ghl_toolkit.client import Contact, GHLClient, add_contact_tags
 from ghl_toolkit.demo import (
     DEMO_CONTACTS,
@@ -62,6 +62,12 @@ class ProposalList(BaseModel):
     """Wrapper for proposal listings."""
 
     proposals: list[StoredProposal]
+
+
+class AuditEntries(BaseModel):
+    """Wrapper for audit-log listings."""
+
+    entries: list[AuditEntry]
 
 
 def _resolve_settings(settings: Settings | None) -> Settings | None:
@@ -274,6 +280,15 @@ def _register_routes(app: FastAPI) -> None:
         store: ProposalStore = request.app.state.store
         _pending_or_error(store, proposal_id)
         return store.update(proposal_id, status="rejected")
+
+    @app.get("/audit", response_model=AuditEntries)
+    def list_audit(request: Request, target_id: str | None = None, limit: int = 50) -> AuditEntries:
+        settings = _settings_or_503(request)
+        entries = AuditLog(settings.audit_log_path).read_all()
+        if target_id is not None:
+            entries = [entry for entry in entries if entry.target_id == target_id]
+        entries.sort(key=lambda entry: entry.ts, reverse=True)
+        return AuditEntries(entries=entries[:limit])
 
     @app.get("/healthz")
     def healthz(request: Request) -> dict[str, object]:
