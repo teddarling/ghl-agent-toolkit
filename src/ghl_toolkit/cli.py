@@ -41,6 +41,7 @@ from ghl_toolkit.llm import (
     BudgetExceeded,
     CostBudget,
     LlmClient,
+    LlmProviderError,
     LlmRefusal,
     MalformedOutputError,
 )
@@ -111,6 +112,37 @@ def _client_or_exit(
         raise typer.Exit(1) from None
     except httpx.HTTPError as exc:
         console.print(f"[red]✗[/red] Request failed: {exc}")
+        raise typer.Exit(1) from None
+
+
+@contextmanager
+def _friendly_errors(trace_path: Path | None = None) -> Iterator[None]:
+    """Translate expected failures into red one-liners with exit 1 — never a traceback."""
+    try:
+        yield
+    except BudgetExceeded as exc:
+        console.print(f"[red]✗[/red] Stopped: {exc}")
+        raise typer.Exit(1) from None
+    except LlmRefusal as exc:
+        console.print(f"[red]✗[/red] The model refused: {exc}")
+        raise typer.Exit(1) from None
+    except MalformedOutputError as exc:
+        detail = textwrap.shorten(exc.error, width=200, placeholder="…")
+        console.print(f"[red]✗[/red] The model kept returning invalid output; giving up. {detail}")
+        if trace_path is not None:
+            # soft_wrap so long paths are never broken mid-filename by the console width
+            console.print(f"Full detail is in {trace_path}", soft_wrap=True)
+        raise typer.Exit(1) from None
+    except LlmProviderError as exc:
+        console.print(f"[red]✗[/red] {exc}")
+        raise typer.Exit(1) from None
+    except ValidationError as exc:
+        first = str(exc).replace("\n", " ")
+        console.print(
+            "[red]✗[/red] Unexpected API response shape: "
+            f"{textwrap.shorten(first, width=200, placeholder='…')} — "
+            "likely a VERIFY item; please report it."
+        )
         raise typer.Exit(1) from None
 
 
@@ -193,7 +225,7 @@ def doctor() -> None:
 @contacts_app.command("list")
 def contacts_list(limit: int = LIMIT_OPTION, json_output: bool = JSON_OPTION) -> None:
     """List recent contacts for the configured location."""
-    with _client_or_exit() as client:
+    with _friendly_errors(), _client_or_exit() as client:
         page = search_contacts(client, limit=limit)
 
     if json_output:
@@ -228,7 +260,7 @@ def contacts_list(limit: int = LIMIT_OPTION, json_output: bool = JSON_OPTION) ->
 @contacts_app.command("get")
 def contacts_get(contact_id: str, json_output: bool = JSON_OPTION) -> None:
     """Show a single contact by id."""
-    with _client_or_exit() as client:
+    with _friendly_errors(), _client_or_exit() as client:
         try:
             contact = get_contact(client, contact_id)
         except NotFound:
@@ -266,7 +298,7 @@ def contacts_get(contact_id: str, json_output: bool = JSON_OPTION) -> None:
 @opps_app.command("list")
 def opps_list(limit: int = LIMIT_OPTION, json_output: bool = JSON_OPTION) -> None:
     """List recent opportunities for the configured location."""
-    with _client_or_exit() as client:
+    with _friendly_errors(), _client_or_exit() as client:
         page = search_opportunities(client, limit=limit)
 
     if json_output:
@@ -301,7 +333,7 @@ def opps_list(limit: int = LIMIT_OPTION, json_output: bool = JSON_OPTION) -> Non
 @convos_app.command("list")
 def convos_list(limit: int = LIMIT_OPTION, json_output: bool = JSON_OPTION) -> None:
     """List recent conversations for the configured location."""
-    with _client_or_exit() as client:
+    with _friendly_errors(), _client_or_exit() as client:
         page = search_conversations(client, limit=limit)
 
     if json_output:
@@ -388,36 +420,29 @@ def agent_tag(
     )
     audit_log = AuditLog(settings.audit_log_path)
 
-    with _client_or_exit(settings, transport=demo_transport() if demo else None) as client:
+    with (
+        _friendly_errors(trace_path=settings.llm_trace_path),
+        _client_or_exit(settings, transport=demo_transport() if demo else None) as client,
+    ):
         page = search_contacts(client, limit=limit)
 
         proposals: list[Proposal] = []
         no_changes = 0
-        try:
-            for contact in page.contacts:
-                proposal = propose_for_contact(
-                    contact,
-                    rules,
-                    llm,
-                    max_tokens=settings.llm_max_tokens,
-                    on_invented=lambda tag: console.print(
-                        f"[yellow]⚠[/yellow] Dropped tag not in the rules: {tag!r}"
-                    ),
-                )
-                if proposal is None:
-                    no_changes += 1
-                else:
-                    proposals.append(proposal)
-                    console.print(_proposal_panel(proposal))
-        except BudgetExceeded as exc:
-            console.print(f"[red]✗[/red] Stopped: {exc}")
-            raise typer.Exit(1) from None
-        except LlmRefusal as exc:
-            console.print(f"[red]✗[/red] The model refused: {exc}")
-            raise typer.Exit(1) from None
-        except MalformedOutputError:
-            console.print("[red]✗[/red] The model kept returning invalid output; giving up.")
-            raise typer.Exit(1) from None
+        for contact in page.contacts:
+            proposal = propose_for_contact(
+                contact,
+                rules,
+                llm,
+                max_tokens=settings.llm_max_tokens,
+                on_invented=lambda tag: console.print(
+                    f"[yellow]⚠[/yellow] Dropped tag not in the rules: {tag!r}"
+                ),
+            )
+            if proposal is None:
+                no_changes += 1
+            else:
+                proposals.append(proposal)
+                console.print(_proposal_panel(proposal))
 
         result = run_proposals(
             proposals,

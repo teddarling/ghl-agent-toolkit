@@ -166,3 +166,17 @@ def test_contacts_list_auth_error_exit_1(cli_env, load_fixture):
         result = runner.invoke(app, ["contacts", "list"])
 
     assert result.exit_code == 1
+
+
+def test_validation_error_friendly_exit_1(cli_env):
+    # Envelope missing the spec-required "total" — a malformed API response must
+    # surface as a friendly one-liner, never a pydantic traceback.
+    with respx.mock(base_url=BASE_URL) as router:
+        router.get("/conversations/search").mock(
+            return_value=httpx.Response(200, json={"conversations": []})
+        )
+        result = runner.invoke(app, ["convos", "list"])
+
+    assert result.exit_code == 1
+    assert "response shape" in result.output.lower()
+    assert "Traceback" not in result.output

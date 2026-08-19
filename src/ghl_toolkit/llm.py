@@ -11,6 +11,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol
 
+import anthropic
 import pydantic
 from anthropic import Anthropic, transform_schema
 from pydantic import BaseModel
@@ -44,6 +45,10 @@ class BudgetExceeded(Exception):
 
 class LlmRefusal(Exception):
     """The model declined to answer. Never retried — the decline is deterministic."""
+
+
+class LlmProviderError(Exception):
+    """The provider rejected or failed the request (auth, connectivity, server errors)."""
 
 
 class MalformedOutputError(Exception):
@@ -114,13 +119,21 @@ class AnthropicProvider:
         self, *, system: str, user: str, response_model: type[T], max_tokens: int
     ) -> tuple[T, Usage]:
         schema = transform_schema(response_model.model_json_schema())
-        message = self._client.messages.create(
-            model=self.model,
-            max_tokens=max_tokens,
-            system=system,
-            messages=[{"role": "user", "content": user}],
-            output_config={"format": {"schema": schema, "type": "json_schema"}},
-        )
+        try:
+            message = self._client.messages.create(
+                model=self.model,
+                max_tokens=max_tokens,
+                system=system,
+                messages=[{"role": "user", "content": user}],
+                output_config={"format": {"schema": schema, "type": "json_schema"}},
+            )
+        except anthropic.APIStatusError as exc:
+            detail = f"Anthropic API error {exc.status_code}: {exc.message}"
+            if exc.status_code in (401, 403):
+                detail += " — check GHL_ANTHROPIC_API_KEY"
+            raise LlmProviderError(detail) from exc
+        except anthropic.APIConnectionError as exc:
+            raise LlmProviderError(f"Could not reach the Anthropic API: {exc}") from exc
         usage = Usage(
             input_tokens=message.usage.input_tokens,
             output_tokens=message.usage.output_tokens,
