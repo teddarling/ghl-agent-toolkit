@@ -43,6 +43,8 @@ class Settings(BaseSettings):
 
     # Webhook server. Demo mode runs the whole loop on seeded data with no credentials.
     demo_mode: bool = False
+    # When set to a built dashboard directory (web/dist), the server serves it at /.
+    serve_web_dist: Path | None = None
     webhook_shared_secret: SecretStr | None = None
     webhook_verify_signature: bool = False
     webhook_public_key: str = GHL_WEBHOOK_PUBLIC_KEY

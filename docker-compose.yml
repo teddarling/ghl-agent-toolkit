@@ -1,0 +1,9 @@
+# One-command demo: `docker compose up` then open http://localhost:8000 —
+# the approval dashboard with seeded proposals, no GHL account or API keys.
+services:
+  demo:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      GHL_DEMO_MODE: "1"

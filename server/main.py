@@ -22,6 +22,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from cryptography.hazmat.primitives.serialization import load_pem_public_key
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ValidationError
 
 from ghl_toolkit.agents.harness import run_proposals
@@ -121,6 +122,12 @@ def create_app(
     app.state.provider = provider
     app.state.transport = transport
     _register_routes(app)
+    # Mounted last so every API route above wins; the SPA gets everything else.
+    resolved = app.state.settings
+    if resolved is not None and resolved.serve_web_dist is not None:
+        dist = Path(resolved.serve_web_dist)
+        if dist.is_dir():
+            app.mount("/", StaticFiles(directory=dist, html=True), name="web")
     return app
 
 

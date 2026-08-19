@@ -1,0 +1,16 @@
+.git/
+.venv/
+web/node_modules/
+web/dist/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.env
+.env.local
+llm-trace.jsonl
+audit.log.jsonl
+proposals.jsonl
+tagging-rules.yaml
+reply-guidelines.yaml
+scoring-rubric.yaml
+docs/assets/
