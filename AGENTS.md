@@ -30,13 +30,18 @@ Everything Python runs through uv — never invoke pip or python directly. Comma
 | `uv run uvicorn server.main:app` | Webhook receiver + proposals API |
 | `GHL_DEMO_MODE=1 uv run uvicorn server.main:app` | Demo mode: seeded proposals, no GHL account or keys needed |
 
-### Web dashboard (from Phase 6)
+### Web dashboard
 
 | Command | Purpose |
 | --- | --- |
-| `pnpm dev` (in `web/`) | Vite dev server, proxies to the FastAPI server (from Phase 6) |
-| `pnpm test` (in `web/`) | Vitest component tests (from Phase 6) |
-| `pnpm build` (in `web/`) | Production build + typecheck (from Phase 6) |
+| `pnpm dev` (in `web/`) | Vite dev server, proxies to the FastAPI server |
+| `pnpm test` (in `web/`) | Vitest component tests |
+| `pnpm build` (in `web/`) | Production build + typecheck |
+| `pnpm lint` (in `web/`) | Lint (oxlint) |
+
+Demo workflow: `GHL_DEMO_MODE=1 uv run uvicorn server.main:app` in one terminal,
+`pnpm dev` in `web/` in another — the dashboard shows seeded proposals with no
+GHL account or keys. See `web/README.md`.
 
 ## Non-negotiables
 
@@ -58,7 +63,7 @@ Update this checklist in the same commit that completes a phase.
 - [x] **Phase 3 — Read operations** — complete (contacts/opportunities/conversations, pydantic models, rich CLI tables)
 - [x] **Phase 4 — Harness + lead_tagger** — complete (propose/approve/apply, cost budget, structured outputs, tracing, audit log; `ghl agent tag`)
 - [x] **Phase 5 — Webhook receiver** — complete (FastAPI server/, proposals API, runnable example; demo mode: server + CLI run against seeded data, no GHL account or token required)
-- [ ] **Phase 6 — React approval dashboard** — not started (web/, Vite + React + TS, TanStack Query, Vitest; dashboard works against demo-mode server for reviewers and screen recordings)
+- [x] **Phase 6 — React approval dashboard** — complete (web/, Vite + React + TS, TanStack Query, Vitest; dashboard works against demo-mode server for reviewers and screen recordings)
 - [ ] **Phase 7 — Remaining agents + docs** — not started (reply_drafter, lead_scorer, docs/, final README pass; devcontainer + "Open in Codespaces" badge, committed vhs tapes for CLI demo GIFs, docker compose for one-command demo)
 
 ## Known deviations from README
