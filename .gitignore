@@ -28,3 +28,6 @@ node_modules/
 
 # Per-business reply guidelines (commit the .example, not your real file)
 reply-guidelines.yaml
+
+# Per-business scoring rubric (commit the .example, not your real file)
+scoring-rubric.yaml

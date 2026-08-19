@@ -14,6 +14,7 @@ import re
 import httpx
 from pydantic import SecretStr
 
+from ghl_toolkit.agents.lead_scorer import ScoreCriterion, ScoringRubric
 from ghl_toolkit.agents.lead_tagger import TaggingRules, TagRule
 from ghl_toolkit.agents.reply_drafter import ReplyGuidelines
 from ghl_toolkit.llm import Usage
@@ -186,7 +187,42 @@ DEMO_MESSAGES: dict[str, list[dict]] = {
     ],
 }
 
-_RULE_LINE = re.compile(r"-\s*([A-Za-z0-9_-]+):")
+# Mirrors scoring-rubric.example.yaml.
+DEMO_RUBRIC = ScoringRubric(
+    criteria=[
+        ScoreCriterion(
+            name="buying-intent",
+            when="The contact asked about pricing, timelines, or booking a service.",
+            points=40,
+        ),
+        ScoreCriterion(
+            name="reachable",
+            when="The contact provided both a phone number and an email address.",
+            points=20,
+        ),
+        ScoreCriterion(
+            name="local",
+            when="The contact is inside the business's service area.",
+            points=20,
+        ),
+        ScoreCriterion(
+            name="engaged",
+            when="The contact replied to outreach or started a conversation themselves.",
+            points=20,
+        ),
+    ]
+)
+
+DEMO_SCORE_FIELD = {
+    "id": "cf_demo_score",
+    "name": "Lead Score",
+    "fieldKey": "contact.lead_score",
+    "dataType": "NUMERICAL",
+    "model": "contact",
+}
+
+# Matches "- tag: when" (tagging rules) and "- name (40 points): when" (rubric).
+_RULE_LINE = re.compile(r"-\s*([A-Za-z0-9_-]+)(?:\s*\(\d+ points\))?:")
 
 
 class DemoProvider:
@@ -205,6 +241,8 @@ class DemoProvider:
             data = self._tags(system, user)
         elif "draft" in fields:
             data = self._draft()
+        elif "score" in fields:
+            data = self._score(system, user)
         else:
             raise ValueError(f"DemoProvider has no demo behavior for {response_model.__name__}")
         return response_model.model_validate(data), Usage(input_tokens=0, output_tokens=0)
@@ -232,6 +270,14 @@ class DemoProvider:
                 "call this week to go over the details and next steps?"
             ),
             "reasoning": "Demo mode: drafted a friendly reply to the latest inbound message.",
+        }
+
+    def _score(self, system: str, user: str) -> dict:
+        matched = self._matched_rules(system, user)
+        summary = ", ".join(matched) if matched else "no rubric keywords"
+        return {
+            "score": min(95, 40 + 15 * len(matched)),
+            "reasoning": f"Demo mode: matched {summary} against the contact's details.",
         }
 
 
@@ -288,6 +334,15 @@ def demo_transport() -> httpx.MockTransport:
             if contact is None:
                 return httpx.Response(404, json={"message": "contact not found"})
             return httpx.Response(200, json={"contact": contact})
+        if request.method == "PUT" and path.startswith("/contacts/"):
+            contact = contacts.get(path.removeprefix("/contacts/"))
+            if contact is None:
+                return httpx.Response(404, json={"message": "contact not found"})
+            return httpx.Response(200, json={"succeeded": True, "contact": contact})
+        if request.method == "GET" and path.endswith(f"/customFields/{DEMO_SCORE_FIELD['id']}"):
+            return httpx.Response(200, json={"customField": DEMO_SCORE_FIELD})
+        if request.method == "GET" and path.endswith("/customFields"):
+            return httpx.Response(200, json={"customFields": [DEMO_SCORE_FIELD]})
         return httpx.Response(404, json={"message": f"no demo route for {request.method} {path}"})
 
     return httpx.MockTransport(handler)

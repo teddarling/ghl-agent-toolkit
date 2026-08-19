@@ -14,6 +14,15 @@ from pydantic.alias_generators import to_camel
 from ghl_toolkit.client.http import GHLClient, iter_pages
 
 
+class ContactCustomField(BaseModel):
+    """One custom-field value on a contact, per the documented contact schema."""
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, extra="ignore")
+
+    id: str
+    value: object = None
+
+
 class Contact(BaseModel):
     """A contact, curated to the fields documented in ``GetContectByIdSchema``."""
 
@@ -35,6 +44,7 @@ class Contact(BaseModel):
     assigned_to: str | None = None
     company_name: str | None = None
     location_id: str | None = None
+    custom_fields: list[ContactCustomField] = Field(default_factory=list)
 
 
 # VERIFY: the POST /contacts/search 200 response has no schema in the official spec; the

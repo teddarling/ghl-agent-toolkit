@@ -92,6 +92,17 @@ and its marker — once the detail is confirmed against the docs or observed API
   unverifiable `webhookId`.
 - **Marker:** `server/main.py` (`_parse_event`).
 
+## V11 — customFields write-item shape on `PUT /contacts/{contactId}`
+
+- **Unverified:** the official spec truncates `UpdateContactDto`, so the exact member
+  set of a `customFields` write item is not machine-verifiable. The rendered
+  marketplace update-contact example shows `{"id", "key", "fieldValue"}`; the GET-side
+  `CustomFieldSchema` shows `{id, value}`.
+- **Assumption:** send `[{"id": <resolved-id>, "fieldValue": "<value>"}]` — the id
+  identifies the field, `key` is omitted as redundant, and values are written as
+  strings.
+- **Marker:** `src/ghl_toolkit/client/custom_fields.py` (`set_contact_custom_field`).
+
 ## Resolved
 
 ### V5 — per-resource pagination parameters (resolved in Phase 3)

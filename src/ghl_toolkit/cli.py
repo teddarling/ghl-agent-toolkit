@@ -16,6 +16,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from ghl_toolkit.agents.harness import Proposal, run_proposals
+from ghl_toolkit.agents.lead_scorer import load_rubric, propose_score
 from ghl_toolkit.agents.lead_tagger import load_rules, propose_for_contact
 from ghl_toolkit.agents.reply_drafter import (
     apply_draft,
@@ -35,8 +36,14 @@ from ghl_toolkit.client import (
     search_conversations,
     search_opportunities,
 )
+from ghl_toolkit.client.custom_fields import (
+    get_custom_field,
+    resolve_score_field,
+    set_contact_custom_field,
+)
 from ghl_toolkit.demo import (
     DEMO_GUIDELINES,
+    DEMO_RUBRIC,
     DEMO_RULES,
     DemoProvider,
     demo_active,
@@ -86,6 +93,9 @@ RULES_OPTION = typer.Option(
 )
 GUIDELINES_OPTION = typer.Option(
     Path("reply-guidelines.yaml"), "--guidelines", help="Path to the reply guidelines file."
+)
+RUBRIC_OPTION = typer.Option(
+    Path("scoring-rubric.yaml"), "--rubric", help="Path to the scoring rubric file."
 )
 CONVO_LIMIT_OPTION = typer.Option(10, "--limit", help="How many recent conversations to consider.")
 BUDGET_OPTION = typer.Option(
@@ -389,6 +399,15 @@ def _proposal_panel(proposal: Proposal) -> Panel:
     return Panel(body, title=f"{proposal.target_label} ({proposal.target_id})", box=box.SQUARE)
 
 
+def _score_panel(proposal: Proposal) -> Panel:
+    before = proposal.before if proposal.before is not None else "(none)"
+    body = (
+        f"[bold]Score:[/bold] {before} → [green]{proposal.after}[/green]\n"
+        f"[bold]Reasoning:[/bold] {proposal.reasoning}"
+    )
+    return Panel(body, title=f"{proposal.target_label} ({proposal.target_id})", box=box.SQUARE)
+
+
 def _draft_panel(proposal: Proposal) -> Panel:
     draft = proposal.after["draft"] if isinstance(proposal.after, dict) else ""
     body = f"[bold]Draft reply:[/bold]\n{draft}\n\n[bold]Reasoning:[/bold] {proposal.reasoning}"
@@ -530,6 +549,56 @@ def agent_draft(
             mode="apply" if apply else "dry_run",
             approver=lambda p: typer.confirm(f"Approve draft for {p.target_label}?"),
             apply_fn=apply_draft,
+            audit_log=audit_log,
+        )
+
+    _print_agent_summary(result, no_changes, apply)
+
+
+@agent_app.command("score")
+def agent_score(
+    apply: bool = APPLY_OPTION,
+    limit: int = AGENT_LIMIT_OPTION,
+    rubric_path: Path = RUBRIC_OPTION,
+    budget: float | None = BUDGET_OPTION,
+) -> None:
+    """Score recent contacts against a rubric; the field write is gated like every write."""
+    demo, settings, llm, audit_log = _agent_context(budget)
+    rubric = _load_agent_config(rubric_path, load_rubric, demo, DEMO_RUBRIC)
+
+    with (
+        _friendly_errors(trace_path=settings.llm_trace_path),
+        _client_or_exit(settings, transport=demo_transport() if demo else None) as client,
+    ):
+        # Resolve the target field once, read-only; the apply path uses only this id.
+        try:
+            if settings.score_field_id is not None:
+                field_id = get_custom_field(client, settings.score_field_id).id
+            else:
+                field_id = resolve_score_field(client, field_key=settings.score_field_key)
+        except LookupError as exc:
+            console.print(f"[red]✗[/red] {exc}")
+            raise typer.Exit(2) from None
+
+        page = search_contacts(client, limit=limit)
+
+        proposals: list[Proposal] = []
+        no_changes = 0
+        for contact in page.contacts:
+            proposal = propose_score(
+                contact, rubric, llm, field_id=field_id, max_tokens=settings.llm_max_tokens
+            )
+            if proposal is None:
+                no_changes += 1
+            else:
+                proposals.append(proposal)
+                console.print(_score_panel(proposal))
+
+        result = run_proposals(
+            proposals,
+            mode="apply" if apply else "dry_run",
+            approver=lambda p: typer.confirm(f"Apply score to {p.target_label}?"),
+            apply_fn=lambda p: set_contact_custom_field(client, p.target_id, field_id, p.after),
             audit_log=audit_log,
         )
 

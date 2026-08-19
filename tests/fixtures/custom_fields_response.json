@@ -1,0 +1,25 @@
+{
+  "customFields": [
+    {
+      "id": "cf_notes001",
+      "name": "Internal Notes",
+      "fieldKey": "contact.internal_notes",
+      "dataType": "LARGE_TEXT",
+      "model": "contact"
+    },
+    {
+      "id": "cf_score001",
+      "name": "Lead Score",
+      "fieldKey": "contact.lead_score",
+      "dataType": "NUMERICAL",
+      "model": "contact"
+    },
+    {
+      "id": "cf_budget001",
+      "name": "Project Budget",
+      "fieldKey": "contact.project_budget",
+      "dataType": "TEXT",
+      "model": "contact"
+    }
+  ]
+}

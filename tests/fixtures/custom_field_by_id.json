@@ -1,0 +1,9 @@
+{
+  "customField": {
+    "id": "cf_score001",
+    "name": "Lead Score",
+    "fieldKey": "contact.lead_score",
+    "dataType": "NUMERICAL",
+    "model": "contact"
+  }
+}

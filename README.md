@@ -50,7 +50,8 @@ ghl-agent-toolkit/
 │   │   ├── http.py        # retries, backoff, rate-limit handling
 │   │   ├── contacts.py
 │   │   ├── opportunities.py
-│   │   └── conversations.py
+│   │   ├── conversations.py
+│   │   └── custom_fields.py
 │   ├── agents/
 │   │   ├── harness.py     # propose/approve/apply, cost budget, structured outputs, tracing
 │   │   ├── lead_tagger.py

@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     anthropic_model: str = "claude-opus-5"
     llm_max_tokens: int = 4096
     agent_budget_usd: float = 1.0
+    # lead_scorer target field: resolved by key unless an explicit id is configured.
+    score_field_key: str = "lead_score"
+    score_field_id: str | None = None
     llm_trace_path: Path = Path("llm-trace.jsonl")
     audit_log_path: Path = Path("audit.log.jsonl")
     proposals_path: Path = Path("proposals.jsonl")

@@ -1,0 +1,19 @@
+# Scoring rubric for the lead_scorer agent. Scores are 0-100.
+# Copy to scoring-rubric.yaml and tailor the criteria to your funnel:
+#   cp scoring-rubric.example.yaml scoring-rubric.yaml
+# The scorer proposes a value; a human approves before anything is written
+# to the custom field.
+
+criteria:
+  - name: buying-intent
+    when: The contact asked about pricing, timelines, or booking a service.
+    points: 40
+  - name: reachable
+    when: The contact provided both a phone number and an email address.
+    points: 20
+  - name: local
+    when: The contact is inside the business's service area.
+    points: 20
+  - name: engaged
+    when: The contact replied to outreach or started a conversation themselves.
+    points: 20
