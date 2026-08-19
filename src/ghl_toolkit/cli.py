@@ -2,7 +2,7 @@
 
 import importlib.metadata
 import textwrap
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
@@ -17,6 +17,11 @@ from rich.table import Table
 
 from ghl_toolkit.agents.harness import Proposal, run_proposals
 from ghl_toolkit.agents.lead_tagger import load_rules, propose_for_contact
+from ghl_toolkit.agents.reply_drafter import (
+    apply_draft,
+    load_guidelines,
+    propose_for_conversation,
+)
 from ghl_toolkit.audit import AuditLog
 from ghl_toolkit.client import (
     ApiError,
@@ -24,12 +29,14 @@ from ghl_toolkit.client import (
     GHLClient,
     NotFound,
     add_contact_tags,
+    fetch_messages,
     get_contact,
     search_contacts,
     search_conversations,
     search_opportunities,
 )
 from ghl_toolkit.demo import (
+    DEMO_GUIDELINES,
     DEMO_RULES,
     DemoProvider,
     demo_active,
@@ -77,6 +84,10 @@ AGENT_LIMIT_OPTION = typer.Option(10, "--limit", help="How many recent contacts 
 RULES_OPTION = typer.Option(
     Path("tagging-rules.yaml"), "--rules", help="Path to the tagging rules file."
 )
+GUIDELINES_OPTION = typer.Option(
+    Path("reply-guidelines.yaml"), "--guidelines", help="Path to the reply guidelines file."
+)
+CONVO_LIMIT_OPTION = typer.Option(10, "--limit", help="How many recent conversations to consider.")
 BUDGET_OPTION = typer.Option(
     None, "--budget", help="Per-run USD budget for LLM calls (default from settings)."
 )
@@ -378,14 +389,14 @@ def _proposal_panel(proposal: Proposal) -> Panel:
     return Panel(body, title=f"{proposal.target_label} ({proposal.target_id})", box=box.SQUARE)
 
 
-@agent_app.command("tag")
-def agent_tag(
-    apply: bool = APPLY_OPTION,
-    limit: int = AGENT_LIMIT_OPTION,
-    rules_path: Path = RULES_OPTION,
-    budget: float | None = BUDGET_OPTION,
-) -> None:
-    """Propose tags for recent contacts; apply only what you approve."""
+def _draft_panel(proposal: Proposal) -> Panel:
+    draft = proposal.after["draft"] if isinstance(proposal.after, dict) else ""
+    body = f"[bold]Draft reply:[/bold]\n{draft}\n\n[bold]Reasoning:[/bold] {proposal.reasoning}"
+    return Panel(body, title=f"{proposal.target_label} ({proposal.target_id})", box=box.SQUARE)
+
+
+def _agent_context(budget: float | None) -> tuple[bool, Settings, LlmClient, AuditLog]:
+    """Shared preamble for agent commands: demo detection, key gate, LLM, audit log."""
     demo = demo_active()
     settings = demo_settings() if demo else _load_settings_or_exit()
     if demo:
@@ -397,28 +408,55 @@ def agent_tag(
         )
         raise typer.Exit(2)
 
-    if rules_path.exists():
-        try:
-            rules = load_rules(rules_path)
-        except ValidationError as exc:
-            console.print(f"[red]✗[/red] Invalid rules file {rules_path}:\n{exc}")
-            raise typer.Exit(2) from None
-    elif demo:
-        rules = DEMO_RULES
-    else:
-        console.print(
-            f"[red]✗[/red] Rules file not found: {rules_path}\n"
-            "Copy the example and edit it for your business:\n"
-            "    cp tagging-rules.example.yaml tagging-rules.yaml"
-        )
-        raise typer.Exit(2)
-
     llm = LlmClient(
         DemoProvider() if demo else AnthropicProvider(settings),
         CostBudget(budget if budget is not None else settings.agent_budget_usd),
         settings.llm_trace_path,
     )
-    audit_log = AuditLog(settings.audit_log_path)
+    return demo, settings, llm, AuditLog(settings.audit_log_path)
+
+
+def _load_agent_config[T](path: Path, loader: Callable[[Path], T], demo: bool, fallback: T) -> T:
+    """Load an agent's config file, falling back to embedded demo config in demo mode."""
+    if path.exists():
+        try:
+            return loader(path)
+        except ValidationError as exc:
+            console.print(f"[red]✗[/red] Invalid file {path}:\n{exc}")
+            raise typer.Exit(2) from None
+    if demo:
+        return fallback
+    example = path.with_suffix("").name + ".example.yaml"
+    console.print(
+        f"[red]✗[/red] File not found: {path}\n"
+        "Copy the example and edit it for your business:\n"
+        f"    cp {example} {path.name}"
+    )
+    raise typer.Exit(2)
+
+
+def _print_agent_summary(result, no_changes: int, apply: bool) -> None:
+    console.print(
+        f"Proposed {result.proposed} · approved {result.approved} · "
+        f"applied {result.applied} · rejected {result.rejected} · no changes {no_changes}"
+    )
+    if not apply and result.proposed:
+        console.print("Dry run — nothing was written. Re-run with --apply to approve changes.")
+    if result.errors:
+        console.print(f"[red]✗[/red] {result.errors} apply call(s) failed — see messages above.")
+        raise typer.Exit(1)
+
+
+@agent_app.command("tag")
+def agent_tag(
+    apply: bool = APPLY_OPTION,
+    limit: int = AGENT_LIMIT_OPTION,
+    rules_path: Path = RULES_OPTION,
+    budget: float | None = BUDGET_OPTION,
+) -> None:
+    """Propose tags for recent contacts; apply only what you approve."""
+    demo, settings, llm, audit_log = _agent_context(budget)
+    rules = _load_agent_config(rules_path, load_rules, demo, DEMO_RULES)
 
     with (
         _friendly_errors(trace_path=settings.llm_trace_path),
@@ -454,12 +492,45 @@ def agent_tag(
             audit_log=audit_log,
         )
 
-    console.print(
-        f"Proposed {result.proposed} · approved {result.approved} · "
-        f"applied {result.applied} · rejected {result.rejected} · no changes {no_changes}"
-    )
-    if not apply and result.proposed:
-        console.print("Dry run — nothing was written. Re-run with --apply to approve changes.")
-    if result.errors:
-        console.print(f"[red]✗[/red] {result.errors} apply call(s) failed — see messages above.")
-        raise typer.Exit(1)
+    _print_agent_summary(result, no_changes, apply)
+
+
+@agent_app.command("draft")
+def agent_draft(
+    apply: bool = APPLY_OPTION,
+    limit: int = CONVO_LIMIT_OPTION,
+    guidelines_path: Path = GUIDELINES_OPTION,
+    budget: float | None = BUDGET_OPTION,
+) -> None:
+    """Draft replies to inbound conversations; drafts only — this agent cannot send."""
+    demo, settings, llm, audit_log = _agent_context(budget)
+    guidelines = _load_agent_config(guidelines_path, load_guidelines, demo, DEMO_GUIDELINES)
+
+    with (
+        _friendly_errors(trace_path=settings.llm_trace_path),
+        _client_or_exit(settings, transport=demo_transport() if demo else None) as client,
+    ):
+        page = search_conversations(client, limit=limit)
+
+        proposals: list[Proposal] = []
+        no_changes = 0
+        for convo in page.conversations:
+            messages = fetch_messages(client, convo.id).messages
+            proposal = propose_for_conversation(
+                convo, messages, guidelines, llm, max_tokens=settings.llm_max_tokens
+            )
+            if proposal is None:
+                no_changes += 1
+            else:
+                proposals.append(proposal)
+                console.print(_draft_panel(proposal))
+
+        result = run_proposals(
+            proposals,
+            mode="apply" if apply else "dry_run",
+            approver=lambda p: typer.confirm(f"Approve draft for {p.target_label}?"),
+            apply_fn=apply_draft,
+            audit_log=audit_log,
+        )
+
+    _print_agent_summary(result, no_changes, apply)
