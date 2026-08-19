@@ -114,8 +114,12 @@ class GHLClient:
         *,
         params: Mapping[str, object] | None = None,
         json: object | None = None,
+        headers: Mapping[str, str] | None = None,
     ) -> httpx.Response:
         """Send a request, retrying per the module's backoff policy, and return the response.
+
+        ``headers`` are merged over the client defaults — some endpoints pin a
+        different ``Version`` than the client-wide 2021-07-28.
 
         Raises the matching typed error from :mod:`ghl_toolkit.client.errors` when the
         final response is an error, or the transport error when the connection fails.
@@ -124,7 +128,9 @@ class GHLClient:
         while True:
             hint_headers: Mapping[str, str] = {}
             try:
-                response = self._client.request(method, path, params=params, json=json)
+                response = self._client.request(
+                    method, path, params=params, json=json, headers=headers
+                )
             except httpx.TransportError:
                 if method.upper() == "POST" or attempt >= MAX_ATTEMPTS - 1:
                     raise
@@ -138,8 +144,14 @@ class GHLClient:
             self._sleep(retry_delay(attempt, hint_headers, self._rng))
             attempt += 1
 
-    def get(self, path: str, *, params: Mapping[str, object] | None = None) -> httpx.Response:
-        return self.request("GET", path, params=params)
+    def get(
+        self,
+        path: str,
+        *,
+        params: Mapping[str, object] | None = None,
+        headers: Mapping[str, str] | None = None,
+    ) -> httpx.Response:
+        return self.request("GET", path, params=params, headers=headers)
 
     def post(
         self,

@@ -12,6 +12,9 @@ from ghl_toolkit.client.contacts import (
 from ghl_toolkit.client.conversations import (
     Conversation,
     ConversationPage,
+    Message,
+    MessagePage,
+    fetch_messages,
     search_conversations,
 )
 from ghl_toolkit.client.errors import ApiError, AuthError, NotFound, RateLimited
@@ -32,6 +35,8 @@ __all__ = [
     "Conversation",
     "ConversationPage",
     "GHLClient",
+    "Message",
+    "MessagePage",
     "NotFound",
     "Opportunity",
     "OpportunityMeta",
@@ -39,6 +44,7 @@ __all__ = [
     "RateLimited",
     "add_contact_tags",
     "auth_headers",
+    "fetch_messages",
     "get_contact",
     "iter_contacts",
     "iter_opportunities",

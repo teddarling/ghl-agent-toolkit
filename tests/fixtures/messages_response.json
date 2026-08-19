@@ -1,0 +1,43 @@
+{
+  "messages": [
+    {
+      "id": "msg_conv001_1",
+      "type": 2,
+      "messageType": "TYPE_SMS",
+      "locationId": "loc_test123",
+      "contactId": "con_test001",
+      "conversationId": "conv_test001",
+      "dateAdded": "2026-08-18T09:00:00.000Z",
+      "direction": "inbound",
+      "body": "Hi - do you have pricing for a kitchen remodel?",
+      "status": "delivered",
+      "contentType": "text/plain"
+    },
+    {
+      "id": "msg_conv001_2",
+      "type": 2,
+      "messageType": "TYPE_SMS",
+      "locationId": "loc_test123",
+      "contactId": "con_test001",
+      "conversationId": "conv_test001",
+      "dateAdded": "2026-08-18T09:05:00.000Z",
+      "direction": "outbound",
+      "body": "Thanks for reaching out! Let me pull some numbers together.",
+      "status": "delivered",
+      "contentType": "text/plain"
+    },
+    {
+      "id": "msg_conv001_3",
+      "type": 1,
+      "messageType": "TYPE_CALL",
+      "locationId": "loc_test123",
+      "contactId": "con_test001",
+      "conversationId": "conv_test001",
+      "dateAdded": "2026-08-18T09:30:00.000Z",
+      "direction": "inbound",
+      "status": "completed"
+    }
+  ],
+  "lastMessageId": "msg_conv001_3",
+  "nextPage": false
+}
