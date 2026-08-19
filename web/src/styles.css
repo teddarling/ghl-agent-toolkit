@@ -1,0 +1,109 @@
+/* Design tokens — the only place raw values live. Components use the variables. */
+:root {
+  --font-stack: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --color-page-bg: #f5f6f8;
+  --color-card-bg: #ffffff;
+  --color-text: #1a1d21;
+  --color-text-secondary: #5f6672;
+  --color-text-muted: #8a919e;
+  --color-accent: #2f6fed;
+  --color-success: #1a7f4b;
+  --color-success-bg: #e8f5ee;
+  --color-danger: #c0392b;
+  --color-danger-bg: #fdecea;
+  --color-demo: #b7791f;
+  --color-demo-bg: #fdf6e7;
+  --color-border: #e3e6ea;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  --radius-card: 10px;
+  --radius-button: 8px;
+  --radius-pill: 999px;
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --queue-max-width: 760px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-stack);
+  background: var(--color-page-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Header */
+.app-header {
+  background: var(--color-card-bg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.app-header-inner {
+  max-width: var(--queue-max-width);
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.wordmark {
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+}
+
+.wordmark-sub {
+  margin-left: var(--space-2);
+  color: var(--color-text-secondary);
+  font-weight: 400;
+  font-size: 14px;
+}
+
+.header-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.demo-badge {
+  background: var(--color-demo-bg);
+  color: var(--color-demo);
+  border: 1px solid currentColor;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px var(--space-2);
+}
+
+.pending-count {
+  background: var(--color-accent);
+  color: #fff;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px var(--space-2);
+}
