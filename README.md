@@ -1,5 +1,8 @@
 # ghl-agent-toolkit
 
+[![CI](https://github.com/teddarling/ghl-agent-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/teddarling/ghl-agent-toolkit/actions/workflows/ci.yml)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/teddarling/ghl-agent-toolkit)
+
 **Production patterns for putting AI agents to work inside GoHighLevel — safely.**
 
 Most GHL + AI examples are demos: happy path, no rate limiting, writes straight to your CRM with no way to review what the AI did. This toolkit is the opposite. It's the harness I use in my own business, extracted and open-sourced: a hardened Python client for the HighLevel API, a small set of useful agents on top of it, and a safety model where **the agent proposes and a human approves** before anything touches your data.
@@ -31,6 +34,19 @@ APPLY    →  the toolkit executes the change, records it in the audit log
 Dry-run is the default. You have to explicitly turn on writes. This is not paranoia — it's what it takes to let an AI touch a CRM that runs a real business.
 
 ## Quickstart
+
+No GHL account or API keys? Take the tour on seeded demo data first:
+
+```bash
+uv sync
+GHL_DEMO_MODE=1 uv run ghl contacts list
+GHL_DEMO_MODE=1 uv run ghl agent tag --dry-run   # the full propose flow, zero writes
+```
+
+Or run the whole thing — server, seeded proposals, and the approval dashboard —
+with one command: `docker compose up`, then open <http://localhost:8000>.
+
+Against your own GoHighLevel account:
 
 ```bash
 uv sync
@@ -81,7 +97,14 @@ ghl-agent-toolkit/
 
 ## Status
 
-Early and moving. The client core, CLI read operations, and the lead-tagger path land first. See issues for the roadmap. PRs welcome — especially real-world failure stories.
+Everything described above ships and is tested: the client core (retry,
+backoff, rate-limit handling), the CLI read operations, all three agents
+behind the propose → approve → apply gate, the webhook receiver and proposals
+API, the React approval dashboard, the audit log, and a credential-free demo
+mode. API details the official docs don't confirm are tracked honestly in
+[VERIFY.md](VERIFY.md) rather than guessed — the webhook payload items there
+are the first thing to check before pointing real traffic at the receiver.
+PRs welcome — especially real-world failure stories.
 
 ## About
 

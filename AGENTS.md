@@ -27,8 +27,11 @@ Everything Python runs through uv — never invoke pip or python directly. Comma
 | `uv run ghl opps list` | List recent opportunities (`--limit`, `--json`) |
 | `uv run ghl convos list` | List recent conversations (`--limit`, `--json`) |
 | `uv run ghl agent tag` | Propose tags for recent contacts (dry-run default; `--apply` to write) |
+| `uv run ghl agent draft` | Draft replies to inbound conversations (drafts only — cannot send) |
+| `uv run ghl agent score` | Score recent contacts to a custom field (dry-run default; `--apply` to write) |
 | `uv run uvicorn server.main:app` | Webhook receiver + proposals API |
 | `GHL_DEMO_MODE=1 uv run uvicorn server.main:app` | Demo mode: seeded proposals, no GHL account or keys needed |
+| `docker compose up` | One-command demo: server + dashboard on seeded data at localhost:8000 |
 
 ### Web dashboard
 
@@ -64,7 +67,9 @@ Update this checklist in the same commit that completes a phase.
 - [x] **Phase 4 — Harness + lead_tagger** — complete (propose/approve/apply, cost budget, structured outputs, tracing, audit log; `ghl agent tag`)
 - [x] **Phase 5 — Webhook receiver** — complete (FastAPI server/, proposals API, runnable example; demo mode: server + CLI run against seeded data, no GHL account or token required)
 - [x] **Phase 6 — React approval dashboard** — complete (web/, Vite + React + TS, TanStack Query, Vitest; dashboard works against demo-mode server for reviewers and screen recordings)
-- [ ] **Phase 7 — Remaining agents + docs** — not started (reply_drafter, lead_scorer, docs/, final README pass; devcontainer + "Open in Codespaces" badge, committed vhs tapes for CLI demo GIFs, docker compose for one-command demo)
+- [x] **Phase 7 — Remaining agents + docs** — complete (reply_drafter, lead_scorer, docs/, final README pass; devcontainer + "Open in Codespaces" badge, committed vhs tapes, docker compose for one-command demo)
+
+All phases complete — the checklist is retained as project history; future work gets new entries.
 
 ## Known deviations from README
 
