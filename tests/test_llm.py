@@ -171,3 +171,42 @@ def test_trace_entries_written(stub_provider, tmp_path):
     assert second["input_tokens"] == 100
     assert second["output_tokens"] == 20
     assert second["cost_usd"] == pytest.approx(0.0002)
+
+
+def test_refusal_charges_budget_and_traces(stub_provider, tmp_path):
+    trace_path = tmp_path / "trace.jsonl"
+    stub_provider.queued = [LlmRefusal("declined", usage=Usage(input_tokens=200, output_tokens=10))]
+    budget = CostBudget(1.0)
+    llm = LlmClient(stub_provider, budget, trace_path)
+
+    with pytest.raises(LlmRefusal):
+        llm.complete(system="s", user="u", response_model=Answer, max_tokens=64)
+
+    assert budget.spent_usd == pytest.approx((200 * 1.00 + 10 * 5.00) / 1_000_000)
+    entries = [json.loads(line) for line in trace_path.read_text().splitlines()]
+    assert len(entries) == 1
+    assert entries[0]["input_tokens"] == 200
+    assert "refus" in json.dumps(entries[0]).lower()
+
+
+def test_provider_status_error_maps_to_llm_provider_error():
+    # LlmProviderError is new in Phase 7; imported here so collection stays green until it exists.
+    from ghl_toolkit.llm import LlmProviderError
+
+    provider = AnthropicProvider(_settings())
+    with respx.mock(base_url=ANTHROPIC_URL) as router:
+        router.post("/v1/messages").mock(
+            return_value=httpx.Response(
+                401,
+                json={
+                    "type": "error",
+                    "error": {"type": "authentication_error", "message": "API key is invalid."},
+                },
+            )
+        )
+        with pytest.raises(LlmProviderError) as exc_info:
+            provider.complete(system="s", user="u", response_model=Answer, max_tokens=64)
+
+    message = str(exc_info.value)
+    assert "401" in message
+    assert "GHL_ANTHROPIC_API_KEY" in message

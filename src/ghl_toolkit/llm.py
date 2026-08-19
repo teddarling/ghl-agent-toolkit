@@ -44,7 +44,15 @@ class BudgetExceeded(Exception):
 
 
 class LlmRefusal(Exception):
-    """The model declined to answer. Never retried — the decline is deterministic."""
+    """The model declined to answer. Never retried — the decline is deterministic.
+
+    Carries the usage of the refused call when the provider reports it, so the
+    budget can account for tokens a refusal still consumed.
+    """
+
+    def __init__(self, message: str, usage: "Usage | None" = None) -> None:
+        super().__init__(message)
+        self.usage = usage
 
 
 class LlmProviderError(Exception):
@@ -139,7 +147,7 @@ class AnthropicProvider:
             output_tokens=message.usage.output_tokens,
         )
         if message.stop_reason == "refusal":
-            raise LlmRefusal("the model declined to produce a response")
+            raise LlmRefusal("the model declined to produce a response", usage=usage)
         raw_text = "".join(block.text for block in message.content if block.type == "text")
         try:
             parsed = response_model.model_validate_json(raw_text)
@@ -176,6 +184,14 @@ class LlmClient:
                     response_model=response_model,
                     max_tokens=max_tokens,
                 )
+            except LlmRefusal as exc:
+                entry["error"] = f"refusal: {exc}"
+                if exc.usage is not None:
+                    entry["input_tokens"] = exc.usage.input_tokens
+                    entry["output_tokens"] = exc.usage.output_tokens
+                    entry["cost_usd"] = self._budget.charge(self._provider.model, exc.usage)
+                self._trace(entry)
+                raise
             except MalformedOutputError as exc:
                 entry["error"] = exc.error
                 entry["raw_response"] = exc.raw_text
